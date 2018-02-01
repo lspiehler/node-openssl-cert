@@ -2,7 +2,7 @@
 const { spawn } = require( 'child_process' )
 var tmp = require('tmp');
 var fs = require('fs');
-const opensslbinpath = '/usr/bin/openssl';
+const opensslbinpath = 'openssl'; //use full path if not is system PATH
 const tempdir = '/tmp/';
 
 var openssl = function() {
