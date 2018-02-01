@@ -7,10 +7,10 @@ var rsakeyoptions = {
 		password: 'test',
 		cipher: 'des3'
 	},
-	rsa_keygen_bits: 2048,
+	/*rsa_keygen_bits: 2048,
 	//rsa_keygen_primes: 2, //causes an error, maybe openssl version?
 	//rsa_keygen_pubexp: 65537,
-	format: 'PKCS8'
+	format: 'PKCS8'*/
 }
 
 var csroptions = {
@@ -55,7 +55,16 @@ var csroptions = {
 openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key) {
 	console.log(key);
 	openssl.generateCSR(csroptions, key, function(err, csr) {
-		console.log(csr);
-		console.log(csr.data);
+		//console.log(csr);
+		if(err) {
+			console.log(err);
+		} else {	
+			console.log(csr.data);
+		}
+			
 	});
 });
+
+
+//ca only keyusage keyCertSign, cRLSign
+//all explanations https://superuser.com/questions/738612/openssl-ca-keyusage-extension

@@ -72,6 +72,32 @@ var openssl = function() {
 			'hash',
 			'subject'
 		];
+		const validkeyusage = [
+			'keyCertSign', //CA Only
+			'cRLSign', //CA Only
+			'digitalSignature',
+			'nonRepudiation',
+			'keyEncipherment',
+			'dataEncipherment',
+			'keyAgreement',
+			'encipherOnly',
+			'decipherOnly'
+		]
+
+		const validextkeyusage = [
+			'serverAuth',
+			'clientAuth',
+			'codeSigning',
+			'emailProtection',
+			'timeStamping',
+			'OCSPSigning',
+			'msCodeInd',
+			'msCodeCom',
+			'mcCTLSign',
+			'msEFS',
+			'ipsecIKE'
+		]
+		
 		const validsubject = [
 			'countryName',
 			'stateOrProvinceName',
@@ -102,12 +128,20 @@ var openssl = function() {
 			req.push('distinguished_name = req_distinguished_name');
 			req.push('[ req_distinguished_name ]');
 			for (var prop in options.subject) {
-				if(prop=='commonName') {
-					for(var i = 0; i <= options.subject[prop].length - 1; i++) {
-						req.push(i + '.' + prop + ' = ' + options.subject[prop][i]);
+				if(validsubject.indexOf(prop) >=0 ) {
+					if(prop=='commonName') {
+						for(var i = 0; i <= options.subject[prop].length - 1; i++) {
+							req.push(i + '.' + prop + ' = ' + options.subject[prop][i]);
+						}
+					} else {
+						req.push(prop + ' = ' + options.subject[prop]);
 					}
 				} else {
-					req.push(prop + ' = ' + options.subject[prop]);
+					callback('Invalid subject: ' + prop,{
+						command: null,
+						data: null
+					});
+					return false;
 				}
 			}
 		}
@@ -126,6 +160,47 @@ var openssl = function() {
 							console.log('Invalid SAN type');
 						}
 					}
+				} else if (ext == 'extendedKeyUsage') {
+					var valid = 0;
+					for(var i = 0; i <= options.extensions[ext].length - 1; i++) {
+						if(validextkeyusage.indexOf(options.extensions[ext][i]) < 0) {
+							callback('Invalid ' + ext + ': ' + extkeyusage,{
+								command: null,
+								data: null
+							});
+							return false;
+						} else {
+							valid++;
+						}
+					}
+					if(valid > 0) {
+						req.push(ext + '=' + options.extensions[ext].join(','));
+					}
+				} else if (ext == 'keyUsage') {
+					var valid = 0;
+					for(var i = 0; i <= options.extensions[ext].length - 1; i++) {
+						//console.log(options.extensions[ext]);
+						if(validkeyusage.indexOf(options.extensions[ext][i]) < 0) {
+							callback('Invalid ' + ext + ': ' + options.extensions[ext][i],{
+								command: null,
+								data: null
+							});
+							return false;
+						} else {
+							valid++;
+						}
+					}
+					if(valid > 0) {
+						req.push(ext + '=' + options.extensions[ext].join(','));
+					}
+				} else if (ext == 'basicConstraints') {
+
+				} else {
+					callback('Invalid extension: ' + ext,{
+						command: null,
+						data: null
+					});
+					return false;
 				}
 			}
 		}
@@ -164,6 +239,7 @@ var openssl = function() {
 	}
 	
 	this.generateRSAPrivateKey = function(options, callback) {
+		const type = 'RSA';
 		let pkeyopt = [];
 		var encryption = false;
 		let validoptions = [
@@ -204,7 +280,7 @@ var openssl = function() {
 		if(options.format=='PKCS8') {
 			runOpenSSLCommand(cmd.join(' '), function(err, out) {
 				console.log(out);
-				callback(false, new privatekey('', options.encryption, out.stdout), [out.command + ' -out rsa.key']);
+				callback(false, new privatekey(type, options.rsa_keygen_bits, options.encryption, out.stdout), [out.command + ' -out rsa.key']);
 			});
 		} else if (options.format == 'PKCS1' ) {
 			runOpenSSLCommand(cmd.join(' '), function(err, outkey) {
@@ -215,7 +291,7 @@ var openssl = function() {
 						if(err) {
 							callback(err, false);
 						} else {
-							callback(false, new privatekey('', options.encryption, out.data), [ outkey.command + ' -out rsa.key', out.command + ' -out rsa.key' ]);
+							callback(false, new privatekey(type, options.rsa_keygen_bits, options.encryption, out.data), [ outkey.command + ' -out rsa.key', out.command + ' -out rsa.key' ]);
 						}
 					});
 				}
@@ -226,8 +302,9 @@ var openssl = function() {
 		}
 	}
 	
-	let privatekey = function(type, encryption, data) {
+	let privatekey = function(type, length, encryption, data) {
 		this.keytype = type;
+		this.length = length;
 		this.encryption = {
 			isencrypted: false,
 		}
