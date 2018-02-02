@@ -35,14 +35,20 @@ var csroptions = {
 			CA: true,
 			pathlen: 1
 		},
-		keyUsage: [
-			'digitalSignature',
-			'keyEncipherment'
-		],
-		extendedKeyUsage: [
-			'serverAuth',
-			'clientAuth'
-		],
+		keyUsage: {
+			//critical: false,
+			usages: [
+				'digitalSignature',
+				'keyEncipherment'
+			]
+		},
+		extendedKeyUsage: {
+			critical: true,
+			usages: [
+				'serverAuth',
+				'clientAuth'
+			]	
+		},
 		SANs: {
 			DNS: [
 				'kernelmanic.com',

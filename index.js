@@ -161,10 +161,11 @@ var openssl = function() {
 						}
 					}
 				} else if (ext == 'extendedKeyUsage') {
+					var critical = '';
 					var valid = 0;
-					for(var i = 0; i <= options.extensions[ext].length - 1; i++) {
-						if(validextkeyusage.indexOf(options.extensions[ext][i]) < 0) {
-							callback('Invalid ' + ext + ': ' + extkeyusage,{
+					for(var i = 0; i <= options.extensions[ext].usages.length - 1; i++) {
+						if(validextkeyusage.indexOf(options.extensions[ext].usages[i]) < 0) {
+							callback('Invalid ' + ext + ': ' + options.extensions[ext].usages[i],{
 								command: null,
 								data: null
 							});
@@ -174,14 +175,16 @@ var openssl = function() {
 						}
 					}
 					if(valid > 0) {
-						req.push(ext + '=' + options.extensions[ext].join(','));
+						if(options.extensions[ext].critical) critical = 'critical,';
+						req.push(ext + '=' + critical + options.extensions[ext].usages.join(','));
 					}
 				} else if (ext == 'keyUsage') {
+					var critical = '';
 					var valid = 0;
-					for(var i = 0; i <= options.extensions[ext].length - 1; i++) {
+					for(var i = 0; i <= options.extensions[ext].usages.length - 1; i++) {
 						//console.log(options.extensions[ext]);
-						if(validkeyusage.indexOf(options.extensions[ext][i]) < 0) {
-							callback('Invalid ' + ext + ': ' + options.extensions[ext][i],{
+						if(validkeyusage.indexOf(options.extensions[ext].usages[i]) < 0) {
+							callback('Invalid ' + ext + ': ' + options.extensions[ext].usages[i],{
 								command: null,
 								data: null
 							});
@@ -191,7 +194,8 @@ var openssl = function() {
 						}
 					}
 					if(valid > 0) {
-						req.push(ext + '=' + options.extensions[ext].join(','));
+						if(options.extensions[ext].critical) critical = 'critical,';
+						req.push(ext + '=' + critical + options.extensions[ext].usages.join(','));
 					}
 				} else if (ext == 'basicConstraints') {
 
