@@ -1,5 +1,5 @@
 const node_openssl = require('./index.js');
-
+var fs = require('fs');
 var openssl = new node_openssl();
 
 var rsakeyoptions = {
@@ -58,8 +58,8 @@ var csroptions = {
 	}
 }
 
-openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key) {
-	console.log(key);
+/*openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key) {
+	console.log(key.data);
 	openssl.generateCSR(csroptions, key, function(err, csr) {
 		//console.log(csr);
 		if(err) {
@@ -69,6 +69,12 @@ openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key) {
 		}
 			
 	});
+});*/
+
+fs.readFile('./test/rsa.key', function(err, contents) {
+    openssl.importRSAPrivateKey(contents, 'test', function(err, key) {
+		console.log(key)
+;	});
 });
 
 
