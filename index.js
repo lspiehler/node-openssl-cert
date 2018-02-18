@@ -53,13 +53,17 @@ var openssl = function() {
 						cmd.push('-inform DER');
 						runOpenSSLCommand(cmd.join(' '), function(err, out) {
 							if(err) {
-								callback(false,out.stderr);
+								callback(true,out.stderr);
 							} else {
-								callback(false,out.stdout);
+								convertToPKCS8(out.stdout, false, function(err, key) {
+									callback(false,key.data);
+								});
 							}
 						});
 					} else {
-						callback(false,out.stdout);
+						convertToPKCS8(out.stdout, false, function(err, key) {
+							callback(false,key.data);
+						});
 					}
 				});
 			});
@@ -70,14 +74,14 @@ var openssl = function() {
 		importRSAPrivateKey(key, password, callback);
 	}
 	
-	var convertToPKCS1 = function(key, encryption, callback) {
+	var convertToPKCS1 = function(key, password, callback) {
 		//console.log(key);
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback) {
 			if (err) throw err;
 			fs.writeFile(path, key, function() {
 				var cmd = ['rsa -in ' + path];
-				if(encryption) {
-					cmd.push('-passin pass:' + encryption.password + ' -passout pass:' + encryption.password + ' -' + encryption.cipher);
+				if(password) {
+					cmd.push('-passin pass:' + password);// + ' -passout pass:' + encryption.password + ' -' + encryption.cipher);
 				}
 				//console.log(cmd);
 				
@@ -98,14 +102,14 @@ var openssl = function() {
 		});
 	}
 	
-	var convertToPKCS8 = function(key, encryption, callback) {
+	var convertToPKCS8 = function(key, password, callback) {
 		//console.log(key);
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback) {
 			if (err) throw err;
 			fs.writeFile(path, key, function() {
 				var cmd = ['pkcs8 -topk8 -inform PEM -outform PEM -in ' + path];
-				if(encryption) {
-					cmd.push('-passin pass:' + encryption.password + ' -passout pass:' + encryption.password + ' -' + encryption.cipher);
+				if(password) {
+					cmd.push('-passin pass:' + password);// + ' -passout pass:' + encryption.password + ' -' + encryption.cipher);
 				} else {
 					cmd.push('-nocrypt');
 				}
@@ -128,7 +132,7 @@ var openssl = function() {
 		});
 	}
 	
-	this.generateCSR = function(options, key, callback) {
+	this.generateCSR = function(options, key, password, callback) {
 		const validopts = [
 			'hash',
 			'subject'
@@ -263,7 +267,76 @@ var openssl = function() {
 						req.push(ext + '=' + critical + options.extensions[ext].usages.join(','));
 					}
 				} else if (ext == 'basicConstraints') {
-
+					var bccmd = [];
+					var valid = 0;
+					for(var type in options.extensions[ext]) {
+						if(type=='critical') {
+							var reqtype = 'boolean';
+							if(typeof(options.extensions[ext][type]) == reqtype) {
+								if (options.extensions[ext][type]) {
+									bccmd.unshift('critical');
+								} else {
+									//not critical
+								}
+								valid++;
+							} else {
+								callback('Provided ' + ext + ' parameter \'' + type + '\' is type ' + typeof(options.extensions[ext][type]) + ', ' + reqtype + ' required',{
+									command: null,
+									data: null
+								});
+								return false;
+							}
+							//console.log(options.extensions[ext][type]);
+						} else if(type=='CA') {
+							var reqtype = 'boolean';
+							if(typeof(options.extensions[ext][type]) == reqtype) {
+								if (options.extensions[ext][type]) {
+									bccmd.push('CA:true');
+								} else {
+									bccmd.push('CA:false');
+								}
+								valid++;
+							} else {
+								callback('Provided ' + ext + ' parameter \'' + type + '\' is type ' + typeof(options.extensions[ext][type]) + ', ' + reqtype + ' required',{
+									command: null,
+									data: null
+								});
+								return false;
+							}
+						} else if(type=='pathlen') {
+							var reqtype = 'number';
+							if(typeof(options.extensions[ext][type]) == reqtype) {
+								if (options.extensions[ext][type]) {
+									bccmd.push('pathlen:' + options.extensions[ext][type]);
+								} else {
+									//optional pathlen not defined
+								}
+								valid++;
+							} else {
+								callback('Provided ' + ext + ' parameter \'' + type + '\' is type ' + typeof(options.extensions[ext][type]) + ', ' + reqtype + ' required',{
+									command: null,
+									data: null
+								});
+								return false;
+							}
+						} else {
+							callback('Invalid ' + ext + ': ' + type,{
+								command: null,
+								data: null
+							});
+							return false;
+						}
+					}
+					if(valid > 0) {
+						req.push('basicConstraints=' + bccmd.join(','));
+					}
+					if(valid == 1 && bccmd[0]=='critical') {
+						callback('Basic constraints cannot contain only \'critical\'', {
+							command: null,
+							data: null
+						});
+						return false;
+					}
 				} else {
 					callback('Invalid extension: ' + ext,{
 						command: null,
@@ -273,17 +346,17 @@ var openssl = function() {
 				}
 			}
 		}
-		//console.log(req);
+		console.log(req);
 		
 		tmp.file(function _tempFileCreated(err, keypath, fd, cleanupCallback) {
 			if (err) throw err;
-			fs.writeFile(keypath, key.data, function() {
+			fs.writeFile(keypath, key, function() {
 				tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback) {
 					if (err) throw err;
 					fs.writeFile(csrpath, req.join('\r\n'), function() {
-						var cmd = ['req -new -new -nodes -sha256 -key ' + keypath + ' -config ' + csrpath];
-						if(key.encryption.isencrypted) {
-							cmd.push('-passin pass:' + key.encryption.password);
+						var cmd = ['req -new -new -nodes -key ' + keypath + ' -config ' + csrpath];
+						if(password) {
+							cmd.push('-passin pass:' + password);
 						}
 				
 				//console.log(cmd);
@@ -349,7 +422,7 @@ var openssl = function() {
 		if(options.format=='PKCS8') {
 			runOpenSSLCommand(cmd.join(' '), function(err, out) {
 				//console.log(out);
-				callback(false, new privatekey(type, options.rsa_keygen_bits, options.encryption, out.stdout), [out.command + ' -out rsa.key']);
+				callback(false, out.stdout, [out.command + ' -out rsa.key']);
 			});
 		} else if (options.format == 'PKCS1' ) {
 			runOpenSSLCommand(cmd.join(' '), function(err, outkey) {
@@ -360,7 +433,7 @@ var openssl = function() {
 						if(err) {
 							callback(err, false);
 						} else {
-							callback(false, new privatekey(type, options.rsa_keygen_bits, options.encryption, out.data), [ outkey.command + ' -out rsa.key', out.command + ' -out rsa.key' ]);
+							callback(false, out.data, [ outkey.command + ' -out rsa.key', out.command + ' -out rsa.key' ]);
 						}
 					});
 				}

@@ -14,7 +14,7 @@ var rsakeyoptions = {
 }
 
 var csroptions = {
-	hash: 'sha256',
+	hash: 'sha512',
 	subject: {
 		countryName: 'US',
 		stateOrProvinceName: 'Louisiana',
@@ -59,9 +59,9 @@ var csroptions = {
 }
 
 /*openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key) {
-	console.log(key.data);
-	openssl.generateCSR(csroptions, key, function(err, csr) {
-		//console.log(csr);
+	console.log(key);
+	openssl.generateCSR(csroptions, key, 'test', function(err, csr) {
+		console.log(csr);
 		if(err) {
 			console.log(err);
 		} else {	
@@ -73,7 +73,15 @@ var csroptions = {
 
 fs.readFile('./test/rsa.key', function(err, contents) {
     openssl.importRSAPrivateKey(contents, 'test', function(err, key) {
-		console.log(key)
+		openssl.generateCSR(csroptions, key, 'test', function(err, csr) {
+			console.log(csr);
+			if(err) {
+				console.log(err);
+			} else {	
+				console.log(csr.data);
+			}
+				
+		});
 ;	});
 });
 
