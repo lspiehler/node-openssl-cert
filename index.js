@@ -346,7 +346,7 @@ var openssl = function() {
 				}
 			}
 		}
-		console.log(req);
+		//console.log(req);
 		
 		tmp.file(function _tempFileCreated(err, keypath, fd, cleanupCallback) {
 			if (err) throw err;
@@ -363,14 +363,18 @@ var openssl = function() {
 				
 						runOpenSSLCommand(cmd.join(' '), function(err, out) {
 							if(err) {
-								callback(err,{
+								callback(err, out.stdout, {
 									command: [out.command.replace(keypath, 'rsa.key')],
-									data: out.stdout
+									files: {
+										config: req.join('\r\n')
+									}
 								});
 							} else {
-								callback(false,{
-									command: [out.command.replace(keypath, 'rsa.key')],
-									data: out.stdout
+								callback(false, out.stdout, {
+									command: [out.command.replace(keypath, 'rsa.key').replace(csrpath, 'config.txt'),],
+									files: {
+										config: req.join('\r\n')
+									}
 								});
 							}
 						});

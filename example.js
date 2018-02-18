@@ -24,8 +24,8 @@ var csroptions = {
 		organizationName: 'SMH',
 		organizationalUnitName: 'IT',
 		commonName: [
-			'kernelmanic.com',
-			'www.kernelmanic.com'
+			'certificatetools.com',
+			'www.certificatetools.com'
 		],
 		emailAddress: 'lyas.spiehler@slidellmemorial.org'
 	},
@@ -51,27 +51,28 @@ var csroptions = {
 		},
 		SANs: {
 			DNS: [
-				'kernelmanic.com',
-				'www.kernelmanic.com'
+				'certificatetools.com',
+				'www.certificatetools.com'
 			]
 		}
 	}
 }
 
-/*openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key) {
+openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key, cmd) {
+	console.log(cmd);
 	console.log(key);
-	openssl.generateCSR(csroptions, key, 'test', function(err, csr) {
-		console.log(csr);
+	openssl.generateCSR(csroptions, key, 'test', function(err, csr, cmd) {
 		if(err) {
 			console.log(err);
-		} else {	
-			console.log(csr.data);
+		} else {
+			console.log(cmd.command);
+			console.log(csr);
 		}
 			
 	});
-});*/
+});
 
-fs.readFile('./test/rsa.key', function(err, contents) {
+/*fs.readFile('./test/rsa.key', function(err, contents) {
     openssl.importRSAPrivateKey(contents, 'test', function(err, key) {
 		openssl.generateCSR(csroptions, key, 'test', function(err, csr) {
 			console.log(csr);
@@ -83,7 +84,7 @@ fs.readFile('./test/rsa.key', function(err, contents) {
 				
 		});
 ;	});
-});
+});*/
 
 
 //ca only keyusage keyCertSign, cRLSign
