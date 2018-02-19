@@ -1,6 +1,24 @@
 # node-openssl-cert
 Node.JS OpenSSL wrapper for creating and converting private keys, generating CSRs, etc.
 
+### Requirements
+
+Make sure the OpenSSL binary is installed and located in the system path
+
+#### Windows
+
+Download installer from https://slproweb.com/products/Win32OpenSSL.html (Light version is sufficient)
+
+#### Debian/Ubuntu Linux
+```
+apt install openssl
+```
+
+#### RedHat/CentOS Linux
+```
+yum install openssl
+```
+
 ### Installation
 
 ```
