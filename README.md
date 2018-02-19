@@ -1,4 +1,4 @@
-#node-openssl-cert
+# node-openssl-cert
 Node.JS OpenSSL wrapper for creating and converting private keys, generating CSRs, etc.
 ###Installation
 
@@ -6,7 +6,7 @@ Node.JS OpenSSL wrapper for creating and converting private keys, generating CSR
 npm install node-openssl-cert
 ```
 
-###Usage
+### Usage
 Load and instantiate node-openssl-cert
 ```
 const node_openssl = require('node-openssl-cert');
