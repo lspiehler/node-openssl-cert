@@ -176,3 +176,175 @@ openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key, cmd) {
 	});
 });
 ```
+Will return like this:
+```
+[ 'openssl genpkey -outform PEM -algorithm RSA -pass pass:test -des3 -pkeyopt rsa_keygen_bits:2048 -pkeyopt rsa_keygen_pubexp:65537 -out rsa.key' ]
+-----BEGIN ENCRYPTED PRIVATE KEY-----
+MIIFDjBABgkqhkiG9w0BBQ0wMzAbBgkqhkiG9w0BBQwwDgQIGygSM8eJHg8CAggA
+MBQGCCqGSIb3DQMHBAjR9LqF/JED0ASCBMjbgofGddW4epbJN4xfHjkhTmr+S7dA
+PPkZsMmj/7oXVox7pxpQ3w4zJJdg2PQdCf7aMjE5aE2N7bKHTw8CYuofQqmpiJOp
+svtD33qxPwLJ3g3jqf0ptIVn+TpPbCWG04E0kwblwgkI+3jyIPit4D+GhQp05khs
+Iy7DBK3KqnrBGDebJKIBdYKGF20vLCO8PY0h/DTA1uUHHwT5A1OTSVkl2DCJ/NVF
+5e31kDsg2weGTULQGkVBUgybkAWJNvQSyeD6NlGBMHYKNU93NQuszab9U5rAO3z2
+TpP6FSLXeEKPs2RSa7Bbc5QLjB/B0rqoHrnDTIXD9zFiA5aRdIELiZY4gQD5vc5F
+AfMNE5CM5VM2+SBuvn2a7y2WuM+AynfOPL5RQFFe4ldEgoQQeWhFrhEqPn3rud8s
+b4rmEWOj9cemq08UatV2pKIrrcgIuMULwCT3rFt0FOMIr6bVUpItrNvcjPi17Pdw
+kZjNg7O0NCU0mYdMXsi2Jj0uRI6TxjuVWoQ2fQyoJc520auYn0C0diREWljBl1NG
+MQ3nR71WEGxDGdfcw3tKm/g1GN7dkH4YvpbjPWjN6AyLkv/u7gGtyshyb8NgvlJb
+xdteAKuAFjop7MftLF7MKshu4ODj7gdrjJVA329CSdjn4tCteX2Q6iKVUfcXpUMA
+OjblRST9/callgQmbpj5pXrB4XLYZk+TDvhFpuTtEzTcKYCfem5CQ/vn3sXJ+iEH
+EraATKvpQLlCqzKB14WqaOfISQhg/viie4ieRZHDdHLxuPRzisK8BipxWdQppQqW
+g8pc2hZv6RgiW7FeEm/pNlpQaw48ifE3uvscqntmm7nP3GiE+xYEPdy/RgVrPe5W
+YkaZdSY4Tb/bRKEAHUGX12CFSdifTgJxBVEQpwmFXHNRDEj6E48blDV6Mni/MioY
+LJVWvXxEQyRuiIkCVhugs/nGk6TQOvGDnXq+bAXGcHZD43bZkypSLdVvMnkaHZ0H
+dqqM5yfz7tRpNaPvwwPKPI6cnAWPq5IWBKHgo/FZ97imWzFLlRJRxquuKm94fScR
+gaBHGD7XxTqSD2nhqEkGxBUmdHoKbEaMDLxRK4dvKP7ut0e40HzlCE5ofiUuCh9B
+4RODmkZSr0jdtkgEeFqSor05oUaxpu51aYcMVishZq6F07wLS0Uzdn+EbcwfYGv0
+T9hJaA9UZRj/cBOo81hfoqvxN8CkH8aQ9Nv3Xbr8+LR+mQmcMvluxlqtC9FciIyf
+pxFixTlQtSPS6DH3taDfxD2aHggI/IY9TsEuIqp/VNRTiHLJ7VfTlL03/QaQZ1T/
+N5u9zavvpoozoWnXcgM9GoyuE8Z149qgNi4gqcVjEh2EPJur+4QEaZm+mS+ows/4
+AuOsDYJ6AJw6Qtw2G0qqDsbcz8EEkIZuxu6Tfb1rbI0tFyys4We3fGdePgdaEJCW
+xufczFA8cgC7CBSJfSJx9Op05hMGSEtOgRLRrZJL7u4kAsQ9Zqamz8/2mM5YCO3E
+zNN89k6b13fmcuXcN2bFacoQbrXJgA72EAinKEq1lyiB4q0LD5Kp4mM3Fia7gZqs
+NGoP5pM61eXypNFU0Wlsq28odu86FxzXia05ataIehyidfGeWEzkDrZc4uwffymF
+8Fc=
+-----END ENCRYPTED PRIVATE KEY-----
+
+[ 'openssl req -new -new -nodes -key rsa.key -config config.txt -passin pass:test' ]
+-----BEGIN CERTIFICATE REQUEST-----
+MIIDxTCCAq0CAQAwge0xCzAJBgNVBAYTAlVTMRIwEAYDVQQIDAlMb3Vpc2lhbmEx
+EDAOBgNVBAcMB1NsaWRlbGwxDjAMBgNVBBEMBTcwNDU4MRkwFwYDVQQJDBAxMDAx
+IEdhdXNlIEJsdmQuMQwwCgYDVQQKDANTTUgxCzAJBgNVBAsMAklUMR0wGwYDVQQD
+DBRjZXJ0aWZpY2F0ZXRvb2xzLmNvbTEhMB8GA1UEAwwYd3d3LmNlcnRpZmljYXRl
+dG9vbHMuY29tMTAwLgYJKoZIhvcNAQkBFiFseWFzLnNwaWVobGVyQHNsaWRlbGxt
+ZW1vcmlhbC5vcmcwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCe+OU/
+TpicMHwfwUo185seGmmUprWQHTXsJ4a4AWSvmBTses8ObWdFEn/zqZhRchFMlp1a
+3guyGmM/eSAO1Ie/tr2DVAPUH+w6OttucrSLtpyMcops3me6xW61xiZ8DpciP0EU
+kjGWoxdC+ZOAV6o0sRpYIIv2OUfBb82W2PV2U8YBhvM65Ybw7xl+Wz2ufcxBABGb
+fhQMqwtYtcCV93uaQ4KCZlQuk6leKq8DfI6VQ/vxuzV7KvLL9wYfX2u0++TvmyMC
+MWVUlsYuyjJ8KlSx2BroyvzyzppKlDOdhUNdM3i2ln1X4W68PlFZxopjFoR9HL0i
+ZbbnCv40JQMP83ArAgMBAAGggZEwgY4GCSqGSIb3DQEJDjGBgDB+MBIGA1UdEwEB
+/wQIMAYBAf8CAQEwCwYDVR0PBAQDAgWgMCAGA1UdJQEB/wQWMBQGCCsGAQUFBwMB
+BggrBgEFBQcDAjA5BgNVHREEMjAwghRjZXJ0aWZpY2F0ZXRvb2xzLmNvbYIYd3d3
+LmNlcnRpZmljYXRldG9vbHMuY29tMA0GCSqGSIb3DQEBDQUAA4IBAQA6NHqm+zh4
+H0whrVcAJ/udn5wY70L8sZgjsVBhWPdV4ZyMm2ZdfrHvkav64DsLW3K/5TjgB3oc
+gvKI0ruCWCgsKSM9gmWyTxUuVPT6M/cL/qLQNr2h+UoSvvqcD/spwlMtY1FDgfHy
+Q3FnUY7BBLFffbxgiJ/LTrvsE7RAvGtRRgYhR/pAl7P1XsD7Iqip1XfFHYRL++/o
+6A0z+kkcZBT4QME2Bm9UmTbI7zDaNcfUJ1QI1oBfLosZ/Uj5d2cAHDc/gD5/u/Ep
+vHPMCq0pwYXN/MTFWw7IKGuZ3L+zSgEg/kuvL3qOvpiacFfUvo5BcxXMkSupiBqc
+JX0LCXd6RpV8
+-----END CERTIFICATE REQUEST-----
+
+[ req ]
+default_md = sha512
+prompt = no
+req_extensions = req_ext
+distinguished_name = req_distinguished_name
+[ req_distinguished_name ]
+countryName = US
+stateOrProvinceName = Louisiana
+localityName = Slidell
+postalCode = 70458
+streetAddress = 1001 Gause Blvd.
+organizationName = SMH
+organizationalUnitName = IT
+0.commonName = certificatetools.com
+1.commonName = www.certificatetools.com
+emailAddress = lyas.spiehler@slidellmemorial.org
+[ req_ext ]
+basicConstraints=critical,CA:true,pathlen:1
+keyUsage=digitalSignature,keyEncipherment
+extendedKeyUsage=critical,serverAuth,clientAuth
+subjectAltName = @alt_names
+[ alt_names ]
+DNS.0 = certificatetools.com
+DNS.1 = www.certificatetools.com
+```
+Import an existing RSA private key with password test and generate a CSR using it.
+```
+const fs = require('fs');
+
+var csroptions = {
+	hash: 'sha512',
+	subject: {
+		countryName: 'US',
+		stateOrProvinceName: 'Louisiana',
+		localityName: 'Slidell',
+		postalCode: '70458',
+		streetAddress: '1001 Gause Blvd.',
+		organizationName: 'SMH',
+		organizationalUnitName: 'IT',
+		commonName: [
+			'certificatetools.com',
+			'www.certificatetools.com'
+		],
+		emailAddress: 'lyas.spiehler@slidellmemorial.org'
+	},
+	extensions: {
+		basicConstraints: {
+			critical: true,
+			CA: true,
+			pathlen: 1
+		},
+		keyUsage: {
+			//critical: false,
+			usages: [
+				'digitalSignature',
+				'keyEncipherment'
+			]
+		},
+		extendedKeyUsage: {
+			critical: true,
+			usages: [
+				'serverAuth',
+				'clientAuth'
+			]	
+		},
+		SANs: {
+			DNS: [
+				'certificatetools.com',
+				'www.certificatetools.com'
+			]
+		}
+	}
+}
+
+fs.readFile('./test/rsa.key', function(err, contents) {
+    openssl.importRSAPrivateKey(contents, 'test', function(err, key, cmd) {
+		openssl.generateCSR(csroptions, key, 'test', function(err, csr, cmd) {
+			if(err) {
+				console.log(err);
+			} else {	
+				console.log(csr);
+			}
+				
+		});
+	});
+});
+```
+Will return like this:
+```
+-----BEGIN CERTIFICATE REQUEST-----
+MIIDxTCCAq0CAQAwge0xCzAJBgNVBAYTAlVTMRIwEAYDVQQIDAlMb3Vpc2lhbmEx
+EDAOBgNVBAcMB1NsaWRlbGwxDjAMBgNVBBEMBTcwNDU4MRkwFwYDVQQJDBAxMDAx
+IEdhdXNlIEJsdmQuMQwwCgYDVQQKDANTTUgxCzAJBgNVBAsMAklUMR0wGwYDVQQD
+DBRjZXJ0aWZpY2F0ZXRvb2xzLmNvbTEhMB8GA1UEAwwYd3d3LmNlcnRpZmljYXRl
+dG9vbHMuY29tMTAwLgYJKoZIhvcNAQkBFiFseWFzLnNwaWVobGVyQHNsaWRlbGxt
+ZW1vcmlhbC5vcmcwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCv69qN
+xSN/piKKS44mVwgxAOCeSMS1qzmV+73O00zI9lzT5kGiKSmg3pDnzUoXTiLFJRWw
+7IQBpRisLMwTZTH+xGNb9A4ViCLosgEC2skGe5pbF6rigTSQrJSl69mDjg/8Xm/I
+Dnh2bCS1pjw+jhCSVfqSEFhxny8QXxnyTQWCakn1lfrDbbHHsh55hPN4aQ9vF9vC
+V9RTVUfKoTrc8T5rsgyxZZq4rYxWuVatarS1L/v+YY2LObv8w/lidhxt8VkUGZOu
+oZDEKLPPRVzh/8zcaYQlAXQLtwLiSK+npUrJbou9PLsSW0Rj7U5eTRatuQf9Z+Zm
+vXS/Avf7y+0RZj4ZAgMBAAGggZEwgY4GCSqGSIb3DQEJDjGBgDB+MBIGA1UdEwEB
+/wQIMAYBAf8CAQEwCwYDVR0PBAQDAgWgMCAGA1UdJQEB/wQWMBQGCCsGAQUFBwMB
+BggrBgEFBQcDAjA5BgNVHREEMjAwghRjZXJ0aWZpY2F0ZXRvb2xzLmNvbYIYd3d3
+LmNlcnRpZmljYXRldG9vbHMuY29tMA0GCSqGSIb3DQEBDQUAA4IBAQBW7oYzsYBI
+yQKrGLj5qtJHqZutzflJYVwmevzdDBDtTJZsIiFENIlGqkzRxEQTLqISnC/jPR86
+2N5m3cn7JGjwEQMGwKMJPxKmBbJu0WTl2n84dTnoJr16mTKaK/03w8uqLArW1pZH
+ImKhA3S2GTyEpLbhX1eoQF35Wt1+G8JGf6JCH7a/Mj9KhlaPLFl8BImApyY9zR2l
+DrJfTYMaUqzC77FnAecLvglXKPMEv9oKuABbab/RsCsSTV2/ikgXheGdcF7KIA3t
+9qnu5s757nIDgIkJkpOFiI+Z5PFQlJJTOTU909cAFy9HapWTA8DN3t24vlSe1vXc
+nI6qB6XsphQP
+-----END CERTIFICATE REQUEST-----
+```
