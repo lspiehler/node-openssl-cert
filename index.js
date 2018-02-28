@@ -1,5 +1,6 @@
 'use strict';
-const { spawn } = require( 'child_process' )
+const { spawn } = require( 'child_process' );
+const https = require('https');
 var tmp = require('tmp');
 var fs = require('fs');
 const opensslbinpath = 'openssl'; //use full path if not is system PATH
@@ -36,6 +37,80 @@ var openssl = function() {
 			} else {
 				callback(false, out);
 			}
+		});
+	}
+	
+	var pemEncode = function(str, n) {
+		var ret = []
+
+		for (var i = 1; i <= str.length; i++) {
+			ret.push(str[i - 1])
+			var mod = i % n
+
+			if (mod === 0) {
+				ret.push('\n')
+			}
+		}
+
+		var returnString = '-----BEGIN CERTIFICATE-----\n' + ret.join('') + '\n-----END CERTIFICATE-----'
+
+		return returnString;
+	}
+	
+	var isEmpty = function (object) {
+		for (var prop in object) {
+			if (object.hasOwnProperty(prop)) return false;
+		}
+
+		return true;
+	}
+	
+	this.getCertFromURL = function(url, callback) {
+		if (url.length <= 0 || typeof url !== 'string') {
+			callback('Invalid URL','Invalid URL');
+		}
+		
+		var options = {
+			hostname: url,
+			agent: false,
+			rejectUnauthorized: false,
+			ciphers: 'ALL'
+		}
+		
+		var req = https.get(options, function(res) {
+			var certificate = res.socket.getPeerCertificate()
+			if (isEmpty(certificate) || certificate === null) {
+				reject({ message: 'The website did not provide a certificate' })
+			} else {
+				if (certificate.raw) {
+					certificate.pemEncoded = pemEncode(certificate.raw.toString('base64'), 64)
+				}
+				callback(false,certificate);
+				return true;
+			}
+		});
+		
+		req.on('error', function(e) {
+			callback(e,false);
+		});
+
+		req.end();
+	}
+	
+	this.convertCertToCSR = function(cert, callback) {
+		var cmd = [];
+		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback) {
+			if (err) throw err;
+			fs.writeFile(path, cert, function() {
+				cmd.push('x509 -in ' + path + ' -text -noout');
+				runOpenSSLCommand(cmd.join(), function(err, out) {
+					if(err) {
+						callback(true,out.stderr,cmd.join());
+					} else {
+						callback(false,out.stdout,cmd.join());
+					}
+				});
+			});
 		});
 	}
 	
