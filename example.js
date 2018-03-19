@@ -21,7 +21,9 @@ var csroptions = {
 		postalCode: '70458',
 		streetAddress: '1001 Gause Blvd.',
 		organizationName: 'SMH',
-		organizationalUnitName: 'IT',
+		organizationalUnitName: [
+			'IT'
+		],
 		commonName: [
 			'certificatetools.com',
 			'www.certificatetools.com'
@@ -85,13 +87,55 @@ var csroptions = {
 	});
 });*/
 
-openssl.getCertFromURL('kace.smhplus.org',function(err, cert) {
+/*.getCertFromURL('yahoo.com',function(err, cert) {
 	if(err) console.log(err);
 	console.log(cert.pemEncoded);
-	openssl.convertCertToCSR(cert.pemEncoded, function(err,csr,cmd) {
-		console.log(csr);
+	openssl.convertCertToCSR(cert.pemEncoded, function(err,csroptions,cmd) {
+		//console.log(csroptions.subject);
+		openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key, cmd) {
+			openssl.generateCSR(csroptions, key, 'test', function(err, csr, cmd) {
+				if(err) {
+					console.log(err);
+					console.log(cmd.files.config);
+				} else {
+					//console.log(cmd.command);
+					console.log(csr);
+					//console.log(cmd.files.config);
+				}
+					
+			});
+		});
+	});
+});*/
+
+openssl.getCertFromURL('yahoo.com',function(err, cert) {
+	openssl.convertCertToCSR(cert.pemEncoded, function(err,csroptions,cmd) {
+		openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key, cmd) {
+			openssl.generateCSR(csroptions, key, 'test', function(err, csr, cmd) {
+				console.log(csr);
+			});
+		});
 	});
 });
+
+/*fs.readFile('./test/test.crt', function(err, contents) {
+	//console.log(contents.toString());
+	openssl.convertCertToCSR(contents.toString(), function(err,csroptions,cmd) {
+		console.log(csroptions);
+		openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key, cmd) {
+			openssl.generateCSR(csroptions, key, 'test', function(err, csr, cmd) {
+				if(err) {
+					console.log(err);
+				} else {
+					//console.log(cmd.command);
+					console.log(csr);
+					//console.log(cmd.files.config);
+				}
+					
+			});
+		});
+	});
+});*/
 
 
 //ca only keyusage keyCertSign, cRLSign

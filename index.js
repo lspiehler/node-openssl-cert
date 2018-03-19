@@ -65,6 +65,230 @@ var openssl = function() {
 		return true;
 	}
 	
+	var getSubjectAlternativeNames = function(sans) {
+		var names = {}
+		var sanarr = sans.content[0].split(', ');
+		for(var i = 0; i <= sanarr.length - 1; i++) {
+			var san = sanarr[i].split(':');
+			var type = san[0];
+			var value = san[1];
+			//console.log(type + ' - ' + value);
+			if(names[type]) {
+				names[type].push(value);
+			} else {
+				names[type] = [value];
+			}
+		}
+		return names;
+	}
+	
+	var getKeyUsage = function(ku) {
+		var keyusage = {}
+		var index = {
+			'Digital Signature': 'digitalSignature',
+			'Key Encipherment': 'keyEncipherment',
+			'Non Repudiation': 'nonRepudiation',
+			'Data Encipherment': 'dataEncipherment',
+			'Key Agreement': 'keyAgreement',
+			'Certificate Sign': 'keyCertSign',
+			'CRL Sign': 'cRLSign',
+			'Encipher Only': 'encipherOnly',
+			'Decipher Only': 'decipherOnly'
+		}
+		var keyusages = ku.content[0].split(', ');
+		if(ku.critical) keyusage.critical = true;
+		keyusage['usages'] = [];
+		for(var i = 0; i <= keyusages.length - 1; i++) {
+			keyusage['usages'].push(index[keyusages[i]]);
+		}
+		return keyusage;
+	}
+	
+	var getExtendedKeyUsage = function(eku) {
+		var extendedkeyusage = {}
+		var index = {
+			'TLS Web Server Authentication': 'serverAuth',
+			'TLS Web Client Authentication': 'clientAuth',
+			'Code Signing': 'codeSigning',
+			'E-mail Protection': 'emailProtection',
+			'Time Stamping': 'timeStamping',
+			'OCSP Signing': 'OCSPSigning',
+			'Microsoft Individual Code Signing': 'msCodeInd',
+			'Microsoft Commercial Code Signing': 'msCodeCom',
+			'Microsoft Trust List Signing': 'msCTLSign',
+			'Microsoft Encrypted File System': 'msEFS'
+		}
+		var extendedkeyusages = eku.content[0].split(', ');
+		if(eku.critical) extendedkeyusage.critical = true;
+		extendedkeyusage['usages'] = [];
+		for(var i = 0; i <= extendedkeyusages.length - 1; i++) {
+			extendedkeyusage['usages'].push(index[extendedkeyusages[i]]);
+		}
+		return extendedkeyusage;
+	}
+	
+	var getBasicConstraints = function(bc) {
+		//console.log(bc);
+		var basicConstraints = {};
+		var constraints = bc.content[0].split(', ');
+		if(bc.critical) basicConstraints.critical = true;
+		for(var i = 0; i <= constraints.length - 1; i++) {
+			var value;
+			var constraint = constraints[i].split(':');
+			if(constraint[1]=='TRUE') {
+				value = true;
+			} else if(constraint[1]=='FALSE') {
+				value = false
+			} else if(!isNaN(constraint[1])) {
+				value = parseInt(constraint[1]);
+			} else {
+				value = constraint[1]
+			}
+			basicConstraints[constraint[0]] = value;
+		}
+		return basicConstraints;
+	}
+	 //this won't work for organization names with a ', '
+	/*var getSubject = function(certificate) {
+		var subject = {};
+		var index = {
+			'C': 'countryName',
+			'ST': 'stateOrProvinceName',
+			'L': 'localityName',
+			'postalCode': 'postalCode',
+			'street': 'streetAddress',
+			'O': 'organizationName',
+			'OU': 'organizationalUnitName',
+			'CN': 'commonName',
+			'emailAddress': 'emailAddress'
+		}
+		var subjectstr = 'Subject: '
+		var findsubject = certificate.split('\n');
+		for(var i = 0; i <= findsubject.length - 1; i++) {
+			if(findsubject[i].indexOf(subjectstr) >= 0) {
+				var subjectline = findsubject[i].substr(findsubject[i].indexOf(subjectstr) + subjectstr.length);
+				//console.log(subjectline);
+				var subjectarr = subjectline.split(', ');
+				for(var j = 0; j <= subjectarr.length - 1; j++) {
+					var subsubject = subjectarr[j].split('/');
+					for(var k = 0; k <= subsubject.length - 1; k++) {
+						var sub = subsubject[k].split('=');
+						console.log(sub);
+						if(sub[0]=='CN' || sub[0]=='OU') {
+							if(subject[index[sub[0]]]) {
+								subject[index[sub[0]]].push(sub[1]);
+							} else {
+								subject[index[sub[0]]] = [sub[1]];
+							}
+						} else {
+							subject[index[sub[0]]] = sub[1];
+						}
+					}
+				}
+			}
+		}
+		console.log(subject);
+	}*/
+	
+	var getSubject = function(certificate) {
+		var normalizesubject = {};
+		var subject = {};
+		var index = {
+			'C': 'countryName',
+			'ST': 'stateOrProvinceName',
+			'L': 'localityName',
+			'postalCode': 'postalCode',
+			'street': 'streetAddress',
+			'O': 'organizationName',
+			'OU': 'organizationalUnitName',
+			'CN': 'commonName',
+			'emailAddress': 'emailAddress'
+		}
+		var subjectstr = 'Subject: '
+		var findsubject = certificate.split('\n');
+		for(var i = 0; i <= findsubject.length - 1; i++) {
+			if(findsubject[i].indexOf(subjectstr) >= 0) {
+				var subjectline = findsubject[i].substr(findsubject[i].indexOf(subjectstr) + subjectstr.length);
+				//console.log(subjectline.replace(/\//g, ', '));
+				//console.log(subjectline.split('='));
+				var subjectarr = subjectline.replace(/\//g, ', ')
+				var splitsubject = subjectarr.split('=');
+				if(splitsubject[0].split(', ').length > 2) {
+					//console.log(splitsubject[j].split(', '));
+					value = splitsubject[1].split(', ').slice(0, -1).join(', ');
+					type = splitsubject[0]
+				} else {
+					value = splitsubject[1].split(', ')[0];
+					type = splitsubject[0]
+				}
+				normalizesubject[index[type]] = [value];
+				for(var j = 1; j <= splitsubject.length - 2; j++) {
+					var type;
+					var value;
+					if(splitsubject[j + 1].split(', ').length > 2) {
+						//console.log(splitsubject[j]);
+						//console.log(splitsubject[j].split(', '));
+						value = splitsubject[j + 1].split(', ').slice(0, -1).join(', ');
+						type = splitsubject[j].split(', ').pop();
+						//console.log(type);
+						//console.log(value);
+					} else {
+						value = splitsubject[j + 1].split(', ')[0];
+						type = splitsubject[j].split(', ')[splitsubject[j].split(', ').length - 1];
+						//console.log(type);
+					}
+					//console.log(type);
+					if(normalizesubject[index[type]]) {
+					normalizesubject[index[type]].push(value);
+					} else {
+						normalizesubject[index[type]] = [value];
+					}
+				}
+			}
+		}
+		for(var key in normalizesubject) {
+			if(normalizesubject[key].length==1) {
+				subject[key] = normalizesubject[key][0];
+			} else {
+				subject[key] = normalizesubject[key];
+			}
+		}
+		return subject;
+	}
+	
+	var getx509v3Attributes = function(certificate) {
+		var extensions = {}
+		var parsedextensions = {};
+		//console.log(certificate);
+		var x509v3 = certificate.split('\n');
+		for(var i = 0; i <= x509v3.length - 1; i++) {
+			if(x509v3[i].indexOf('X509v3') >= 0 || x509v3[i].indexOf('CT Precertificate SCTs') >= 0 || x509v3[i].indexOf('Authority Information Access') >= 0 ) {
+				var ext = x509v3[i].split(':');
+				var extname = ext[0].replace('X509v3','').trim();
+				var critical = false;
+				if(ext[1]==' critical') critical = true; 
+				//console.log(i + ' - ' + extname + ' - ' + critical);
+				parsedextensions[extname] = { "critical": critical, "content": []};
+			} else {
+				if(parsedextensions[extname]) {
+					parsedextensions[extname].content.push(x509v3[i].trim());
+				}
+			}
+		}
+		for(var key in parsedextensions) {
+			if(key=='Subject Alternative Name') {
+				extensions['SANs'] = getSubjectAlternativeNames(parsedextensions[key]);
+			} else if(key=='Key Usage') {
+				extensions['keyUsage'] = getKeyUsage(parsedextensions[key]);
+			} else if(key=='Extended Key Usage') {
+				extensions['extendedKeyUsage'] = getExtendedKeyUsage(parsedextensions[key]);
+			} else if(key=='Basic Constraints') {
+				extensions['basicConstraints'] = getBasicConstraints(parsedextensions[key]);
+			}
+		}
+		return extensions;
+	}
+	
 	this.getCertFromURL = function(url, callback) {
 		if (url.length <= 0 || typeof url !== 'string') {
 			callback('Invalid URL','Invalid URL');
@@ -107,7 +331,14 @@ var openssl = function() {
 					if(err) {
 						callback(true,out.stderr,cmd.join());
 					} else {
-						callback(false,out.stdout,cmd.join());
+						var extensions = getx509v3Attributes(out.stdout);
+						var subject = getSubject(out.stdout);
+						var csroptions = {
+							extensions: extensions,
+							subject: subject
+						}
+						//callback(false,out.stdout,cmd.join());
+						callback(false,csroptions,cmd.join());
 					}
 				});
 			});
@@ -208,6 +439,7 @@ var openssl = function() {
 	}
 	
 	this.generateCSR = function(options, key, password, callback) {
+		options.hash = typeof options.hash !== 'undefined' ? options.hash : 'sha256';
 		const validopts = [
 			'hash',
 			'subject'
@@ -233,7 +465,7 @@ var openssl = function() {
 			'OCSPSigning',
 			'msCodeInd',
 			'msCodeCom',
-			'mcCTLSign',
+			'msCTLSign',
 			'msEFS',
 			'ipsecIKE'
 		]
@@ -268,8 +500,10 @@ var openssl = function() {
 			req.push('distinguished_name = req_distinguished_name');
 			req.push('[ req_distinguished_name ]');
 			for (var prop in options.subject) {
+				//console.log(prop + typeof(options.subject[prop]));
 				if(validsubject.indexOf(prop) >=0 ) {
-					if(prop=='commonName') {
+					//if(prop=='commonName' || prop=='organizationalUnitName') {
+					if(typeof(options.subject[prop]) != 'string') {
 						for(var i = 0; i <= options.subject[prop].length - 1; i++) {
 							req.push(i + '.' + prop + ' = ' + options.subject[prop][i]);
 						}
@@ -289,12 +523,13 @@ var openssl = function() {
 			req.push('[ req_ext ]');
 			for(var ext in options.extensions) {
 				if(ext == 'SANs') {
-					req.push('subjectAltName = @alt_names');
-					req.push('[ alt_names ]');
+					var sansatend = [];
+					sansatend.push('subjectAltName = @alt_names');
+					sansatend.push('[ alt_names ]');
 					for(var type in options.extensions[ext]) {
 						if(validsantypes.indexOf(type) >= 0) {
 							for(var i = 0; i <= options.extensions[ext][type].length - 1; i++) {
-								req.push(type + '.' + i  + ' = ' + options.extensions[ext][type][i]);
+								sansatend.push(type + '.' + i  + ' = ' + options.extensions[ext][type][i]);
 							}
 						} else {
 							callback('Invalid ' + ext + ': ' + options.extensions[ext].usages[i],{
@@ -419,6 +654,9 @@ var openssl = function() {
 					});
 					return false;
 				}
+			}
+			for(var i = 0; i <= sansatend.length - 1; i++) {
+				req.push(sansatend[i]);
 			}
 		}
 		//console.log(req);
