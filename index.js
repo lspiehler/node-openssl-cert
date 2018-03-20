@@ -10,11 +10,26 @@ var openssl = function() {
 	var runOpenSSLCommand = function(cmd, callback) {
 		const stdoutbuff = [];
 		const stderrbuff = [];
+		var terminate = false;
+		
+		if(cmd.indexOf('s_client') >= 0) {
+			terminate = true;
+		}
 		
 		const openssl = spawn( opensslbinpath, cmd.split(' ') );
 		
 		openssl.stdout.on('data', function(data) {
 			stdoutbuff.push(data.toString());
+			/*//openssl.stdin.setEncoding('utf-8');
+			setTimeout(function() {
+				//openssl.stdin.write("QUIT\r");
+				//console.log('QUIT\r\n');
+				//openssl.stdin.end();
+				openssl.kill();
+			}, 1000);*/
+			if(terminate) {
+				openssl.kill();
+			}
 		});
 
 		/*openssl.stdout.on('end', function(data) {
@@ -26,6 +41,9 @@ var openssl = function() {
 		});
 		
 		openssl.on('exit', function(code) {
+			if(terminate && code==null) {
+				code = 0;
+			}
 			var out = {
 				command: 'openssl ' + cmd,
 				stdout: stdoutbuff.join(),
@@ -319,6 +337,30 @@ var openssl = function() {
 		});
 
 		req.end();
+	}
+	
+	this.getCertFromNetwork = function(options, callback) {
+		const end = '-----END CERTIFICATE-----';
+		options.port = typeof options.port !== 'undefined' ? options.port : 443;
+		options.starttls = typeof options.starttls !== 'undefined' ? options.starttls : false;
+		options.protocol = typeof options.protocol !== 'undefined' ? options.protocol : 'https';
+		
+		var command;
+		var param;
+		
+		if(options.protocol=='https') {
+			param = ' -servername ' + options.hostname;
+		} else {
+			param = ' -starttls ' + options.protocol;
+		}
+		command = 's_client -connect ' + options.hostname + ':' + options.port + param;
+		runOpenSSLCommand(command, function(err, out) {
+			if(err) {
+				callback(err,false,command);
+			}
+			callback(false, out.stdout.split('Server certificate\n')[1].split(end)[0] + end, command);
+		});
+		//console.log(options);
 	}
 	
 	this.convertCertToCSR = function(cert, callback) {

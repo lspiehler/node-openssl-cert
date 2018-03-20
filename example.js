@@ -59,6 +59,43 @@ var csroptions = {
 	}
 }
 
+var netcertoptions = {
+	hostname: 'barracuda1.smhplus.org',
+	port: 25,
+	starttls: true,
+	protocol: 'smtp'
+}
+
+var netcertoptions = {
+	hostname: 'kernelmanic.com',
+	port: 443,
+	starttls: false,
+	protocol: 'https'
+}
+
+openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
+	//console.log(cert);
+	//console.log(cmd);
+	if(err) console.log(err);
+	//console.log(cert);
+	openssl.convertCertToCSR(cert, function(err,csroptions,cmd) {
+		//console.log(csroptions.subject);
+		openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key, cmd) {
+			openssl.generateCSR(csroptions, key, 'test', function(err, csr, cmd) {
+				if(err) {
+					console.log(err);
+					console.log(cmd.files.config);
+				} else {
+					//console.log(cmd.command);
+					console.log(csr);
+					//console.log(cmd.files.config);
+				}
+					
+			});
+		});
+	});
+});
+
 /*openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key, cmd) {
 	console.log(cmd);
 	console.log(key);
@@ -87,7 +124,7 @@ var csroptions = {
 	});
 });*/
 
-/*.getCertFromURL('yahoo.com',function(err, cert) {
+/*openssl.getCertFromURL('yahoo.com',function(err, cert) {
 	if(err) console.log(err);
 	console.log(cert.pemEncoded);
 	openssl.convertCertToCSR(cert.pemEncoded, function(err,csroptions,cmd) {
@@ -108,7 +145,7 @@ var csroptions = {
 	});
 });*/
 
-openssl.getCertFromURL('yahoo.com',function(err, cert) {
+/*openssl.getCertFromURL('yahoo.com',function(err, cert) {
 	openssl.convertCertToCSR(cert.pemEncoded, function(err,csroptions,cmd) {
 		openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key, cmd) {
 			openssl.generateCSR(csroptions, key, 'test', function(err, csr, cmd) {
@@ -116,7 +153,7 @@ openssl.getCertFromURL('yahoo.com',function(err, cert) {
 			});
 		});
 	});
-});
+});*/
 
 /*fs.readFile('./test/test.crt', function(err, contents) {
 	//console.log(contents.toString());
