@@ -676,7 +676,7 @@ var openssl = function() {
 	}
 	
 	this.selfSignCSR = function(csr, options, key, password, callback) {
-		console.log(csr);
+		//console.log(csr);
 		generateConfig(options, function(err, req) {
 			if(err) {
 				callback(err,{
