@@ -480,7 +480,7 @@ var openssl = function() {
 		});
 	}
 	
-	this.generateCSR = function(options, key, password, callback) {
+	var generateConfig = function(options, callback) {
 		options.hash = typeof options.hash !== 'undefined' ? options.hash : 'sha256';
 		const validopts = [
 			'hash',
@@ -553,10 +553,7 @@ var openssl = function() {
 						req.push(prop + ' = ' + options.subject[prop]);
 					}
 				} else {
-					callback('Invalid subject: ' + prop,{
-						command: null,
-						data: null
-					});
+					callback('Invalid subject: ' + prop, false);
 					return false;
 				}
 			}
@@ -574,10 +571,7 @@ var openssl = function() {
 								sansatend.push(type + '.' + i  + ' = ' + options.extensions[ext][type][i]);
 							}
 						} else {
-							callback('Invalid ' + ext + ': ' + options.extensions[ext].usages[i],{
-								command: null,
-								data: null
-							});
+							callback('Invalid ' + ext + ': ' + options.extensions[ext].usages[i], false);
 							return false;
 						}
 					}
@@ -586,10 +580,7 @@ var openssl = function() {
 					var valid = 0;
 					for(var i = 0; i <= options.extensions[ext].usages.length - 1; i++) {
 						if(validextkeyusage.indexOf(options.extensions[ext].usages[i]) < 0) {
-							callback('Invalid ' + ext + ': ' + options.extensions[ext].usages[i],{
-								command: null,
-								data: null
-							});
+							callback('Invalid ' + ext + ': ' + options.extensions[ext].usages[i], false);
 							return false;
 						} else {
 							valid++;
@@ -605,10 +596,7 @@ var openssl = function() {
 					for(var i = 0; i <= options.extensions[ext].usages.length - 1; i++) {
 						//console.log(options.extensions[ext]);
 						if(validkeyusage.indexOf(options.extensions[ext].usages[i]) < 0) {
-							callback('Invalid ' + ext + ': ' + options.extensions[ext].usages[i],{
-								command: null,
-								data: null
-							});
+							callback('Invalid ' + ext + ': ' + options.extensions[ext].usages[i], false);
 							return false;
 						} else {
 							valid++;
@@ -632,10 +620,7 @@ var openssl = function() {
 								}
 								valid++;
 							} else {
-								callback('Provided ' + ext + ' parameter \'' + type + '\' is type ' + typeof(options.extensions[ext][type]) + ', ' + reqtype + ' required',{
-									command: null,
-									data: null
-								});
+								callback('Provided ' + ext + ' parameter \'' + type + '\' is type ' + typeof(options.extensions[ext][type]) + ', ' + reqtype + ' required', false);
 								return false;
 							}
 							//console.log(options.extensions[ext][type]);
@@ -649,10 +634,7 @@ var openssl = function() {
 								}
 								valid++;
 							} else {
-								callback('Provided ' + ext + ' parameter \'' + type + '\' is type ' + typeof(options.extensions[ext][type]) + ', ' + reqtype + ' required',{
-									command: null,
-									data: null
-								});
+								callback('Provided ' + ext + ' parameter \'' + type + '\' is type ' + typeof(options.extensions[ext][type]) + ', ' + reqtype + ' required', false);
 								return false;
 							}
 						} else if(type=='pathlen') {
@@ -665,17 +647,11 @@ var openssl = function() {
 								}
 								valid++;
 							} else {
-								callback('Provided ' + ext + ' parameter \'' + type + '\' is type ' + typeof(options.extensions[ext][type]) + ', ' + reqtype + ' required',{
-									command: null,
-									data: null
-								});
+								callback('Provided ' + ext + ' parameter \'' + type + '\' is type ' + typeof(options.extensions[ext][type]) + ', ' + reqtype + ' required', false);
 								return false;
 							}
 						} else {
-							callback('Invalid ' + ext + ': ' + type,{
-								command: null,
-								data: null
-							});
+							callback('Invalid ' + ext + ': ' + type, false);
 							return false;
 						}
 					}
@@ -683,17 +659,11 @@ var openssl = function() {
 						req.push('basicConstraints=' + bccmd.join(','));
 					}
 					if(valid == 1 && bccmd[0]=='critical') {
-						callback('Basic constraints cannot contain only \'critical\'', {
-							command: null,
-							data: null
-						});
+						callback('Basic constraints cannot contain only \'critical\'', false);
 						return false;
 					}
 				} else {
-					callback('Invalid extension: ' + ext,{
-						command: null,
-						data: null
-					});
+					callback('Invalid extension: ' + ext, false);
 					return false;
 				}
 			}
@@ -701,41 +671,107 @@ var openssl = function() {
 				req.push(sansatend[i]);
 			}
 		}
+		callback(false, req);
 		//console.log(req);
-		
-		tmp.file(function _tempFileCreated(err, keypath, fd, cleanupCallback) {
-			if (err) throw err;
-			fs.writeFile(keypath, key, function() {
+	}
+	
+	this.selfSignCSR = function(csr, options, key, password, callback) {
+		console.log(csr);
+		generateConfig(options, function(err, req) {
+			if(err) {
+				callback(err,{
+					command: null,
+					data: null
+				});
+				return false;
+			} else {
 				tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback) {
 					if (err) throw err;
-					fs.writeFile(csrpath, req.join('\r\n'), function() {
-						var cmd = ['req -new -new -nodes -key ' + keypath + ' -config ' + csrpath];
-						if(password) {
-							cmd.push('-passin pass:' + password);
-						}
-				
-				//console.log(cmd);
-				
-						runOpenSSLCommand(cmd.join(' '), function(err, out) {
-							if(err) {
-								callback(err, out.stdout, {
-									command: [out.command.replace(keypath, 'rsa.key')],
-									files: {
-										config: req.join('\r\n')
+					fs.writeFile(csrpath, csr, function() {
+						tmp.file(function _tempFileCreated(err, keypath, fd, cleanupCallback) {
+							if (err) throw err;
+							fs.writeFile(keypath, key, function() {
+								tmp.file(function _tempFileCreated(err, csrconfig, fd, cleanupCallback) {
+									if (err) throw err;
+									fs.writeFile(csrconfig, req.join('\r\n'), function() {
+										var cmd = ['req -x509 -nodes -in ' + csrpath + ' -days 3650 -key ' + keypath + ' -config ' + csrconfig];
+										if(password) {
+											cmd.push('-passin pass:' + password);
+										}
+								
+								//console.log(cmd);
+								
+										runOpenSSLCommand(cmd.join(' '), function(err, out) {
+											if(err) {
+												callback(err, out.stdout, {
+													command: [out.command.replace(keypath, 'rsa.key')],
+													files: {
+														config: req.join('\r\n')
+													}
+												});
+											} else {
+												callback(false, out.stdout, {
+													command: [out.command.replace(keypath, 'rsa.key').replace(csrpath, 'config.txt'),],
+													files: {
+														config: req.join('\r\n')
+													}
+												});
+											}
+										});
+									});
+								});
+							});
+						});
+					});
+				});	
+			}
+		});
+	}
+	
+	this.generateCSR = function(options, key, password, callback) {
+		generateConfig(options, function(err, req) {
+			if(err) {
+				callback(err,{
+					command: null,
+					data: null
+				});
+				return false;
+			} else {
+				tmp.file(function _tempFileCreated(err, keypath, fd, cleanupCallback) {
+					if (err) throw err;
+					fs.writeFile(keypath, key, function() {
+						tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback) {
+							if (err) throw err;
+							fs.writeFile(csrpath, req.join('\r\n'), function() {
+								var cmd = ['req -new -nodes -key ' + keypath + ' -config ' + csrpath];
+								if(password) {
+									cmd.push('-passin pass:' + password);
+								}
+						
+						//console.log(cmd);
+						
+								runOpenSSLCommand(cmd.join(' '), function(err, out) {
+									if(err) {
+										callback(err, out.stdout, {
+											command: [out.command.replace(keypath, 'rsa.key')],
+											files: {
+												config: req.join('\r\n')
+											}
+										});
+									} else {
+										callback(false, out.stdout, {
+											command: [out.command.replace(keypath, 'rsa.key').replace(csrpath, 'config.txt'),],
+											files: {
+												config: req.join('\r\n')
+											}
+										});
 									}
 								});
-							} else {
-								callback(false, out.stdout, {
-									command: [out.command.replace(keypath, 'rsa.key').replace(csrpath, 'config.txt'),],
-									files: {
-										config: req.join('\r\n')
-									}
-								});
-							}
+							});
 						});
 					});
 				});
-			});
+			}
 		});
 	}
 	

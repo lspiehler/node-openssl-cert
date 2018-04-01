@@ -81,14 +81,25 @@ openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
 	openssl.convertCertToCSR(cert, function(err,csroptions,cmd) {
 		//console.log(csroptions.subject);
 		openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key, cmd) {
+			//console.log(key);
 			openssl.generateCSR(csroptions, key, 'test', function(err, csr, cmd) {
 				if(err) {
 					console.log(err);
 					console.log(cmd.files.config);
 				} else {
 					//console.log(cmd.command);
-					console.log(csr);
+					//console.log(csr);
 					//console.log(cmd.files.config);
+					openssl.selfSignCSR(csr, csroptions, key, 'test', function(err, crt, cmd) {
+						if(err) {
+							console.log(err);
+							console.log(cmd.files.config);
+						} else {
+							console.log(cmd.command);
+							console.log(crt);
+							console.log(cmd.files.config);
+						}
+					});
 				}
 					
 			});
