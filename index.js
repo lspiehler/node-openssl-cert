@@ -667,8 +667,10 @@ var openssl = function() {
 					return false;
 				}
 			}
-			for(var i = 0; i <= sansatend.length - 1; i++) {
-				req.push(sansatend[i]);
+			if(sansatend) {
+				for(var i = 0; i <= sansatend.length - 1; i++) {
+					req.push(sansatend[i]);
+				}
 			}
 		}
 		callback(false, req);
