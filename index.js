@@ -706,14 +706,14 @@ var openssl = function() {
 										runOpenSSLCommand(cmd.join(' '), function(err, out) {
 											if(err) {
 												callback(err, out.stdout, {
-													command: [out.command.replace(keypath, 'rsa.key')],
+													command: [out.command.replace(keypath, 'rsa.key').replace(csrpath, 'cert.csr').replace(csrconfig, 'config.txt') + ' -out cert.csr'],
 													files: {
 														config: req.join('\r\n')
 													}
 												});
 											} else {
 												callback(false, out.stdout, {
-													command: [out.command.replace(keypath, 'rsa.key').replace(csrpath, 'config.txt'),],
+													command: [out.command.replace(keypath, 'rsa.key').replace(csrpath, 'cert.csr').replace(csrconfig, 'config.txt') + ' -out cert.csr'],
 													files: {
 														config: req.join('\r\n')
 													}
@@ -755,14 +755,14 @@ var openssl = function() {
 								runOpenSSLCommand(cmd.join(' '), function(err, out) {
 									if(err) {
 										callback(err, out.stdout, {
-											command: [out.command.replace(keypath, 'rsa.key')],
+											command: [out.command.replace(keypath, 'rsa.key').replace(csrpath, 'config.txt') + ' -out cert.csr'],
 											files: {
 												config: req.join('\r\n')
 											}
 										});
 									} else {
 										callback(false, out.stdout, {
-											command: [out.command.replace(keypath, 'rsa.key').replace(csrpath, 'config.txt'),],
+											command: [out.command.replace(keypath, 'rsa.key').replace(csrpath, 'config.txt') + ' -out cert.csr'],
 											files: {
 												config: req.join('\r\n')
 											}
