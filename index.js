@@ -401,7 +401,7 @@ var openssl = function() {
 						cmd.push('-inform DER');
 						runOpenSSLCommand(cmd.join(' '), function(err, out) {
 							if(err) {
-								callback(true,out.stderr);
+								callback(out.stderr,false);
 							} else {
 								convertToPKCS8(out.stdout, false, function(err, key) {
 									callback(false,key.data);
@@ -679,6 +679,7 @@ var openssl = function() {
 	
 	this.selfSignCSR = function(csr, options, key, password, callback) {
 		//console.log(csr);
+		options.days = typeof options.days !== 'undefined' ? options.days : 365;
 		generateConfig(options, function(err, req) {
 			if(err) {
 				callback(err,{
@@ -696,7 +697,7 @@ var openssl = function() {
 								tmp.file(function _tempFileCreated(err, csrconfig, fd, cleanupCallback) {
 									if (err) throw err;
 									fs.writeFile(csrconfig, req.join('\r\n'), function() {
-										var cmd = ['req -x509 -nodes -in ' + csrpath + ' -days 3650 -key ' + keypath + ' -config ' + csrconfig + ' -extensions req_ext'];
+										var cmd = ['req -x509 -nodes -in ' + csrpath + ' -days ' + options.days + ' -key ' + keypath + ' -config ' + csrconfig + ' -extensions req_ext'];
 										if(password) {
 											cmd.push('-passin pass:' + password);
 										}
