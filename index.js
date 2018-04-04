@@ -696,7 +696,7 @@ var openssl = function() {
 								tmp.file(function _tempFileCreated(err, csrconfig, fd, cleanupCallback) {
 									if (err) throw err;
 									fs.writeFile(csrconfig, req.join('\r\n'), function() {
-										var cmd = ['req -x509 -nodes -in ' + csrpath + ' -days 3650 -key ' + keypath + ' -config ' + csrconfig];
+										var cmd = ['req -x509 -nodes -in ' + csrpath + ' -days 3650 -key ' + keypath + ' -config ' + csrconfig + ' -extensions req_ext'];
 										if(password) {
 											cmd.push('-passin pass:' + password);
 										}
