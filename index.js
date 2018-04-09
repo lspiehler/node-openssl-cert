@@ -340,6 +340,7 @@ var openssl = function() {
 	}
 	
 	this.getCertFromNetwork = function(options, callback) {
+		const begin = '-----BEGIN CERTIFICATE-----';
 		const end = '-----END CERTIFICATE-----';
 		options.port = typeof options.port !== 'undefined' ? options.port : 443;
 		options.starttls = typeof options.starttls !== 'undefined' ? options.starttls : false;
@@ -361,7 +362,7 @@ var openssl = function() {
 				callback(err, false, 'openssl ' + command);
 			} else {
 				try {
-					var certificate = out.stdout.split('Server certificate\n')[1].split(end)[0] + end;
+					var certificate = begin + out.stdout.split(begin)[1].split(end)[0] + end;
 				} catch(e) {
 					callback('No certificate found in openssl command response', 'No certificate found in openssl command response', 'openssl ' + command);
 					return;
@@ -389,7 +390,7 @@ var openssl = function() {
 							subject: subject
 						}
 						//callback(false,out.stdout,cmd.join());
-						callback(false,csroptions,cmd.join());
+						callback(false,csroptions,'openssl ' + cmd.join().replace(path, 'cert.crt'));
 					}
 				});
 			});
