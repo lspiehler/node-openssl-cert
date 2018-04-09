@@ -350,8 +350,7 @@ var openssl = function() {
 		
 		if(options.protocol=='https') {
 			param = ' -servername ' + options.hostname;
-		}
-		else if(options.starttls){
+		} else if(options.starttls){
 			param = ' -starttls ' + options.protocol;
 		} else {
 			param = '';
@@ -359,9 +358,16 @@ var openssl = function() {
 		command = 's_client -connect ' + options.hostname + ':' + options.port + param;
 		runOpenSSLCommand(command, function(err, out) {
 			if(err) {
-				callback(err,false,'openssl ' + command);
+				callback(err, false, 'openssl ' + command);
+			} else {
+				try {
+					var certificate = out.stdout.split('Server certificate\n')[1].split(end)[0] + end;
+				} catch(e) {
+					callback('No certificate found in openssl command response', 'No certificate found in openssl command response', 'openssl ' + command);
+					return;
+				}
+				callback(false, certificate, 'openssl ' + command);
 			}
-			callback(false, out.stdout.split('Server certificate\n')[1].split(end)[0] + end, 'openssl ' + command);
 		});
 		//console.log(options);
 	}
