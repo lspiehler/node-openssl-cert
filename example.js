@@ -68,22 +68,28 @@ var netcertoptions = {
 }
 
 var netcertoptions = {
-	hostname: 'kernelmanic.com',
+	hostname: 'google.com',
 	port: 443,
 	starttls: false,
 	protocol: 'https'
 }
 
-var netcertoptions = {
+/*var netcertoptions = {
 	hostname: 'barracuda1.smhplus.org',
 	port: 25,
 	starttls: true,
 	protocol: 'smtp'
-}
+}*/
 
-openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
+/*openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
 	console.log(cmd);
 	console.log(cert);
+});*/
+
+fs.readFile('./googletest.crt', function(err, contents) {
+	openssl.convertCertToCSR(contents, function(err,csroptions,cmd) {
+		console.log(csroptions);
+	});
 });
 
 /*openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
@@ -92,7 +98,9 @@ openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
 	if(err) console.log(err);
 	//console.log(cert);
 	openssl.convertCertToCSR(cert, function(err,csroptions,cmd) {
-		//console.log(csroptions.subject);
+		console.log(csroptions);
+		//console.log(cmd);
+		return;
 		openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key, cmd) {
 			console.log(cmd);
 			openssl.generateCSR(csroptions, key, 'test', function(err, csr, cmd) {

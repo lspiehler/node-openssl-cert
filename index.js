@@ -208,6 +208,14 @@ var openssl = function() {
 		console.log(subject);
 	}*/
 	
+	var trimSubjectAttrs = function(values) {
+		var trimmed = []
+		for(var i = 0; i <= values.length - 1; i++) {
+			trimmed.push(values[i].trim());
+		}
+		return trimmed;
+	}
+	
 	var getSubject = function(certificate) {
 		var normalizesubject = {};
 		var subject = {};
@@ -227,10 +235,13 @@ var openssl = function() {
 		for(var i = 0; i <= findsubject.length - 1; i++) {
 			if(findsubject[i].indexOf(subjectstr) >= 0) {
 				var subjectline = findsubject[i].substr(findsubject[i].indexOf(subjectstr) + subjectstr.length);
+				//console.log(subjectline);
 				//console.log(subjectline.replace(/\//g, ', '));
 				//console.log(subjectline.split('='));
 				var subjectarr = subjectline.replace(/\//g, ', ')
-				var splitsubject = subjectarr.split('=');
+				var untrimmedsubject = subjectarr.split('=');
+				//console.log(splitsubject);
+				var splitsubject = trimSubjectAttrs(untrimmedsubject);
 				if(splitsubject[0].split(', ').length > 2) {
 					//console.log(splitsubject[j].split(', '));
 					value = splitsubject[1].split(', ').slice(0, -1).join(', ');
