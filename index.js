@@ -3,7 +3,7 @@ const { spawn } = require( 'child_process' );
 const https = require('https');
 var tmp = require('tmp');
 var fs = require('fs');
-const opensslbinpath = 'openssl'; //use full path if not is system PATH
+const opensslbinpath = 'openssl'; //use full path if not in system PATH
 const tempdir = '/tmp/';
 
 var openssl = function() {
@@ -350,15 +350,18 @@ var openssl = function() {
 		
 		if(options.protocol=='https') {
 			param = ' -servername ' + options.hostname;
-		} else {
+		}
+		else if(options.starttls){
 			param = ' -starttls ' + options.protocol;
+		} else {
+			param = '';
 		}
 		command = 's_client -connect ' + options.hostname + ':' + options.port + param;
 		runOpenSSLCommand(command, function(err, out) {
 			if(err) {
-				callback(err,false,command);
+				callback(err,false,'openssl ' + command);
 			}
-			callback(false, out.stdout.split('Server certificate\n')[1].split(end)[0] + end, command);
+			callback(false, out.stdout.split('Server certificate\n')[1].split(end)[0] + end, 'openssl ' + command);
 		});
 		//console.log(options);
 	}

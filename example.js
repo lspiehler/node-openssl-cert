@@ -14,6 +14,7 @@ var rsakeyoptions = {
 
 var csroptions = {
 	hash: 'sha512',
+	days: 240,
 	subject: {
 		countryName: 'US',
 		stateOrProvinceName: 'Louisiana',
@@ -31,7 +32,7 @@ var csroptions = {
 		emailAddress: 'lyas.spiehler@slidellmemorial.org'
 	},
 	extensions: {
-		/*basicConstraints: {
+		basicConstraints: {
 			critical: true,
 			CA: true,
 			pathlen: 1
@@ -49,7 +50,7 @@ var csroptions = {
 				'serverAuth',
 				'clientAuth'
 			]	
-		},*/
+		},
 		SANs: {
 			DNS: [
 				'certificatetools.com',
@@ -73,7 +74,19 @@ var netcertoptions = {
 	protocol: 'https'
 }
 
+var netcertoptions = {
+	hostname: 'barracuda1.smhplus.org',
+	port: 25,
+	starttls: true,
+	protocol: 'smtp'
+}
+
 openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
+	console.log(cmd);
+	console.log(cert);
+});
+
+/*openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
 	//console.log(cert);
 	//console.log(cmd);
 	if(err) console.log(err);
@@ -81,15 +94,16 @@ openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
 	openssl.convertCertToCSR(cert, function(err,csroptions,cmd) {
 		//console.log(csroptions.subject);
 		openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key, cmd) {
-			//console.log(key);
+			console.log(cmd);
 			openssl.generateCSR(csroptions, key, 'test', function(err, csr, cmd) {
 				if(err) {
 					console.log(err);
 					console.log(cmd.files.config);
 				} else {
-					//console.log(cmd.command);
+					console.log(cmd);
 					//console.log(csr);
 					//console.log(cmd.files.config);
+					csroptions.days = 240;
 					openssl.selfSignCSR(csr, csroptions, key, 'test', function(err, crt, cmd) {
 						if(err) {
 							console.log(err);
@@ -105,7 +119,7 @@ openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
 			});
 		});
 	});
-});
+});*/
 
 /*openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key, cmd) {
 	console.log(cmd);
