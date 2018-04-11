@@ -443,16 +443,16 @@ var openssl = function() {
 		importRSAPrivateKey(key, password, callback);
 	}
 	
-	var convertToPKCS1 = function(key, password, callback) {
+	var convertToPKCS1 = function(key, encryption, callback) {
 		//console.log(key);
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback) {
 			if (err) throw err;
 			fs.writeFile(path, key, function() {
 				var cmd = ['rsa -in ' + path];
-				if(password) {
-					cmd.push('-passin pass:' + password);// + ' -passout pass:' + encryption.password + ' -' + encryption.cipher);
+				if(encryption) {
+					cmd.push('-' + encryption.cipher + ' -passin pass:' + encryption.password + ' -passout pass:' + encryption.password);// + ' -passout pass:' + encryption.password + ' -' + encryption.cipher);
 				}
-				//console.log(cmd);
+				console.log(cmd);
 				
 				runOpenSSLCommand(cmd.join(' '), function(err, out) {
 					if(err) {
