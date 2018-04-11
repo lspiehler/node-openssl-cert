@@ -452,7 +452,7 @@ var openssl = function() {
 				if(encryption) {
 					cmd.push('-' + encryption.cipher + ' -passin pass:' + encryption.password + ' -passout pass:' + encryption.password);// + ' -passout pass:' + encryption.password + ' -' + encryption.cipher);
 				}
-				console.log(cmd);
+				//console.log(cmd);
 				
 				runOpenSSLCommand(cmd.join(' '), function(err, out) {
 					if(err) {
