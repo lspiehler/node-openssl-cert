@@ -701,9 +701,16 @@ var openssl = function() {
 	var generatePKCS12 = function(certpath, keypath, passin, passout, capath, callback) {
 		tmp.file(function _tempFileCreated(err, pfxpath, fd, cleanupCallback) {
 			if (err) throw err;
-			var cmd = ['pkcs12 -export -passin pass:' + passin + ' -out ' + pfxpath + ' -inkey ' + keypath + ' -in ' + certpath + ' -passout pass:' + passout];
+			var cmd = ['pkcs12 -export -out ' + pfxpath + ' -inkey ' + keypath + ' -in ' + certpath];
 			if(passout) {
-				cmd.push('-nodes');
+				cmd.push('-passout pass:' + passout);
+			} else {
+				cmd.push('-nodes -passout pass:');
+			}
+			if(passin) {
+				cmd.push('-passin pass:' + passin);
+			} else {
+				cmd.push('-passin pass:');
 			}
 			if(capath) {
 				cmd.push('-certfile ' + capath);
