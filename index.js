@@ -702,6 +702,9 @@ var openssl = function() {
 		tmp.file(function _tempFileCreated(err, pfxpath, fd, cleanupCallback) {
 			if (err) throw err;
 			var cmd = ['pkcs12 -export -passin pass:' + passin + ' -out ' + pfxpath + ' -inkey ' + keypath + ' -in ' + certpath + ' -passout pass:' + passout];
+			if(passout) {
+				cmd.push('-nodes');
+			}
 			if(capath) {
 				cmd.push('-certfile ' + capath);
 			}
