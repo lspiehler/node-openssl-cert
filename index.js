@@ -698,6 +698,117 @@ var openssl = function() {
 		//console.log(req);
 	}
 	
+	var generatePKCS12 = function(certpath, keypath, passin, passout, capath, callback) {
+		tmp.file(function _tempFileCreated(err, pfxpath, fd, cleanupCallback) {
+			if (err) throw err;
+			var cmd = ['pkcs12 -export -passin pass:' + passin + ' -out ' + pfxpath + ' -inkey ' + keypath + ' -in ' + certpath + ' -passout pass:' + passout];
+			if(capath) {
+				cmd.push('-certfile ' + capath);
+			}
+			runOpenSSLCommand(cmd.join(' '), function(err, out) {
+				if(err) {
+					//console.log(out.command);
+					callback(err, out.stdout, {
+						command: [out.command.replace(keypath, 'rsa.key').replace(certpath, 'cert.crt').replace(pfxpath, 'cert.pfx').replace(capath, 'ca.crt') + ' -out cert.pfx']
+					});
+				} else {
+					fs.readFile(pfxpath, function(err, data) {
+						//console.log(out.command);
+						callback(false, data, {
+							command: [out.command.replace(keypath, 'rsa.key').replace(certpath, 'cert.crt').replace(pfxpath, 'cert.pfx').replace(capath, 'ca.crt') + ' -out cert.pfx']
+						});
+					});
+				}
+			});
+		});
+	}
+	
+	this.createPKCS12 = function(cert, key, passin, passout, ca, callback) {
+		tmp.file(function _tempFileCreated(err, certpath, fd, cleanupCallback) {
+			if (err) throw err;
+			fs.writeFile(certpath, cert, function() {
+				tmp.file(function _tempFileCreated(err, keypath, fd, cleanupCallback) {
+					if (err) throw err;
+					fs.writeFile(keypath, key, function() {
+						if(ca) {
+							tmp.file(function _tempFileCreated(err, capath, fd, cleanupCallback) {
+								if (err) throw err;
+								fs.writeFile(capath, ca, function() {
+									generatePKCS12(certpath, keypath, passin, passout, capath, function(err, pfx, command) {
+										callback(err, pfx, command);
+									});
+								});
+							});
+						} else {
+							generatePKCS12(certpath, keypath, passin, passout, false, function(err, pfx, command) {
+								callback(err, pfx, command);
+							});
+						}
+					});
+				});
+			});
+		});
+	}
+	
+	this.CASignCSR = function(csr, options, ca, key, password, callback) {
+		//console.log(csr);
+		options.days = typeof options.days !== 'undefined' ? options.days : 365;
+		generateConfig(options, function(err, req) {
+			if(err) {
+				callback(err,{
+					command: null,
+					data: null
+				});
+				return false;
+			} else {
+				tmp.file(function _tempFileCreated(err, capath, fd, cleanupCallback) {
+					if (err) throw err;
+					fs.writeFile(capath, ca, function() {
+						tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback) {
+							if (err) throw err;
+							fs.writeFile(csrpath, csr, function() {
+								tmp.file(function _tempFileCreated(err, keypath, fd, cleanupCallback) {
+									if (err) throw err;
+									fs.writeFile(keypath, key, function() {
+										tmp.file(function _tempFileCreated(err, csrconfig, fd, cleanupCallback) {
+											if (err) throw err;
+											fs.writeFile(csrconfig, req.join('\r\n'), function() {
+												var cmd = ['x509 -req -in ' + csrpath + ' -serial -days ' + options.days + ' -CA ' + capath + ' -CAkey ' + keypath + ' -extfile ' + csrconfig + ' -extensions req_ext -CAcreateserial'];
+												if(password) {
+													cmd.push('-passin pass:' + password);
+												}
+										
+										//console.log(cmd);
+										
+												runOpenSSLCommand(cmd.join(' '), function(err, out) {
+													if(err) {
+														callback(err, out.stdout, {
+															command: [out.command.replace(keypath, 'rsa.key').replace(csrpath, 'cert.csr').replace(capath, 'ca.crt').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
+															files: {
+																config: req.join('\r\n')
+															}
+														});
+													} else {
+														callback(false, out.stdout, {
+															command: [out.command.replace(keypath, 'rsa.key').replace(csrpath, 'cert.csr').replace(capath, 'ca.crt').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
+															files: {
+																config: req.join('\r\n')
+															}
+														});
+													}
+												});
+											});
+										});
+									});
+								});
+							});
+						});
+					});
+				});
+			}
+		});
+	}
+	
 	this.selfSignCSR = function(csr, options, key, password, callback) {
 		//console.log(csr);
 		options.days = typeof options.days !== 'undefined' ? options.days : 365;
