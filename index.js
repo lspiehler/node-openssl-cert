@@ -773,7 +773,7 @@ var openssl = function() {
 										tmp.file(function _tempFileCreated(err, csrconfig, fd, cleanupCallback) {
 											if (err) throw err;
 											fs.writeFile(csrconfig, req.join('\r\n'), function() {
-												var cmd = ['x509 -req -in ' + csrpath + ' -serial -days ' + options.days + ' -CA ' + capath + ' -CAkey ' + keypath + ' -extfile ' + csrconfig + ' -extensions req_ext -CAcreateserial'];
+												var cmd = ['x509 -req -in ' + csrpath + ' -days ' + options.days + ' -CA ' + capath + ' -CAkey ' + keypath + ' -extfile ' + csrconfig + ' -extensions req_ext -CAcreateserial'];
 												if(password) {
 													cmd.push('-passin pass:' + password);
 												}
