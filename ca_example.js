@@ -116,17 +116,22 @@ openssl.generateRSAPrivateKey(rsakeyoptions, function(err, cakey, cmd) {
 							//console.log(cakey);
 							//console.log(crt);
 							openssl.CASignCSR(csr, cacsroptions, cacrt ,cakey, 'test', function(err, crt, cmd) {
-								console.log(cmd);
+								//console.log(cmd);
 								if(err) console.log(err);
 								console.log(crt);
-								console.log(cmd);
-								openssl.createPKCS12(crt, key, 'test', '12345', cacrt, function(err, pfx, command) {
+								//console.log(cmd);
+								openssl.createPKCS7(new Array(crt, cacrt), function(err, pkcs7, command) {
+									console.log(command);
+									console.log(pkcs7);
+								});
+								return;
+								openssl.createPKCS12(crt, key, 'test', false, cacrt, function(err, pfx, command) {
 									if(err) {
 										//console.log(err);
 										//console.log(command);
 									} else {
-										//console.log(pfx);
-										//console.log(command);
+										console.log(pfx);
+										console.log(command);
 									}
 									
 								});

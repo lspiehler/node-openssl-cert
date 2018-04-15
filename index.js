@@ -698,6 +698,29 @@ var openssl = function() {
 		//console.log(req);
 	}
 	
+	this.createPKCS7 = function(certs, callback) {
+		//console.log(typeof(certs));
+		var cmd = ['crl2pkcs7 -nocrl']
+		for(var i = 0; i <= certs.length - 1; i++) {
+			var name = tmp.tmpNameSync();
+			fs.writeFileSync(name, certs[i]);
+			cmd.push('-certfile ' + name);
+		}
+		runOpenSSLCommand(cmd.join(' '), function(err, out) {
+			if(err) {
+				//console.log(out.command);
+				callback(err, out.stdout, {
+					command: [out.command]
+				});
+			} else {
+				//console.log(out.command);
+				callback(false, out.stdout, {
+					command: [out.command]
+				});
+			}
+		});
+	}
+	
 	var generatePKCS12 = function(certpath, keypath, passin, passout, capath, callback) {
 		tmp.file(function _tempFileCreated(err, pfxpath, fd, cleanupCallback) {
 			if (err) throw err;
