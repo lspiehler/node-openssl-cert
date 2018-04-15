@@ -46,8 +46,8 @@ var openssl = function() {
 			}
 			var out = {
 				command: 'openssl ' + cmd,
-				stdout: stdoutbuff.join(),
-				stderr: stderrbuff.join(),
+				stdout: stdoutbuff.join(''),
+				stderr: stderrbuff.join(''),
 				exitcode: code
 			}
 			if (code != 0) {
