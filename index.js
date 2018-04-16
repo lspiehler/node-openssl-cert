@@ -422,7 +422,17 @@ var openssl = function() {
 						cmd.push('-inform DER');
 						runOpenSSLCommand(cmd.join(' '), function(err, out) {
 							if(err) {
-								callback(out.stderr,false);
+								cmd = ['pkcs12 -passin pass:' + pass + ' -in ' + path + ' -nocerts -nodes'];
+								runOpenSSLCommand(cmd.join(' '), function(err, out) {
+									if(err) {
+										callback(out.stderr,false);
+										console.log(out);
+									} else {
+										convertToPKCS8(out.stdout, false, function(err, key) {
+											callback(false,key.data);
+										});
+									}
+								});
 							} else {
 								convertToPKCS8(out.stdout, false, function(err, key) {
 									callback(false,key.data);
