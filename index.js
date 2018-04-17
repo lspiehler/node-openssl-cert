@@ -661,7 +661,7 @@ var openssl = function() {
 						} else if(type=='pathlen') {
 							var reqtype = 'number';
 							if(typeof(options.extensions[ext][type]) == reqtype) {
-								if (options.extensions[ext][type]) {
+								if (options.extensions[ext][type] >= 0) {
 									bccmd.push('pathlen:' + options.extensions[ext][type]);
 								} else {
 									//optional pathlen not defined
