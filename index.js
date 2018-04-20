@@ -511,7 +511,7 @@ var openssl = function() {
 		});
 	}
 	
-	var generateConfig = function(options, callback) {
+	var generateConfig = function(options, cert, callback) {
 		options.hash = typeof options.hash !== 'undefined' ? options.hash : 'sha256';
 		const validopts = [
 			'hash',
@@ -661,6 +661,10 @@ var openssl = function() {
 							if(typeof(options.extensions[ext][type]) == reqtype) {
 								if (options.extensions[ext][type]) {
 									bccmd.push('CA:true');
+									if(cert) {
+										req.push('subjectKeyIdentifier = hash');
+										req.push('authorityKeyIdentifier = keyid:always,issuer');
+									}
 								} else {
 									bccmd.push('CA:false');
 								}
@@ -797,7 +801,7 @@ var openssl = function() {
 	this.CASignCSR = function(csr, options, ca, key, password, callback) {
 		//console.log(csr);
 		options.days = typeof options.days !== 'undefined' ? options.days : 365;
-		generateConfig(options, function(err, req) {
+		generateConfig(options, true, function(err, req) {
 			if(err) {
 				callback(err,{
 					command: null,
@@ -856,7 +860,7 @@ var openssl = function() {
 	this.selfSignCSR = function(csr, options, key, password, callback) {
 		//console.log(csr);
 		options.days = typeof options.days !== 'undefined' ? options.days : 365;
-		generateConfig(options, function(err, req) {
+		generateConfig(options, true, function(err, req) {
 			if(err) {
 				callback(err,{
 					command: null,
@@ -908,7 +912,7 @@ var openssl = function() {
 	}
 	
 	this.generateCSR = function(options, key, password, callback) {
-		generateConfig(options, function(err, req) {
+		generateConfig(options, false, function(err, req) {
 			if(err) {
 				callback(err,{
 					command: null,
