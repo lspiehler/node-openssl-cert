@@ -566,9 +566,9 @@ var openssl = function() {
 			'default_md = ' + options.hash,
 			'prompt = no'
 		]
-		if(options.extensions) {
+		//if(options.extensions) {
 			req.push('req_extensions = req_ext');
-		}
+		//}
 		if(options.subject) {
 			req.push('distinguished_name = req_distinguished_name');
 			req.push('[ req_distinguished_name ]');
@@ -589,8 +589,9 @@ var openssl = function() {
 				}
 			}
 		}
+		req.push('[ req_ext ]');
 		if(options.extensions) {
-			req.push('[ req_ext ]');
+			//req.push('[ req_ext ]');
 			for(var ext in options.extensions) {
 				if(ext == 'SANs') {
 					var sansatend = [];
