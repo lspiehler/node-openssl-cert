@@ -386,7 +386,7 @@ var openssl = function() {
 	
 	this.convertCertToCSR = function(cert, callback) {
 		var cmd = [];
-		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback) {
+		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 			if (err) throw err;
 			fs.writeFile(path, cert, function() {
 				cmd.push('x509 -in ' + path + ' -text -noout');
@@ -403,13 +403,14 @@ var openssl = function() {
 						//callback(false,out.stdout,cmd.join());
 						callback(false,csroptions,'openssl ' + cmd.join().replace(path, 'cert.crt'));
 					}
+					cleanupCallback1();
 				});
 			});
 		});
 	}
 	
 	var importRSAPrivateKey = function(key, password, callback) {
-		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback) {
+		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 			if (err) throw err;
 			fs.writeFile(path, key, function() {
 				var pass = '';
@@ -444,6 +445,7 @@ var openssl = function() {
 							callback(false,key.data);
 						});
 					}
+					cleanupCallback1();
 				});
 			});
 		});
@@ -455,7 +457,7 @@ var openssl = function() {
 	
 	var convertToPKCS1 = function(key, encryption, callback) {
 		//console.log(key);
-		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback) {
+		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 			if (err) throw err;
 			fs.writeFile(path, key, function() {
 				var cmd = ['rsa -in ' + path];
@@ -476,6 +478,7 @@ var openssl = function() {
 							data: out.stdout
 						});
 					}
+					cleanupCallback1();
 				});
 			});
 		});
@@ -483,7 +486,7 @@ var openssl = function() {
 	
 	var convertToPKCS8 = function(key, password, callback) {
 		//console.log(key);
-		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback) {
+		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 			if (err) throw err;
 			fs.writeFile(path, key, function() {
 				var cmd = ['pkcs8 -topk8 -inform PEM -outform PEM -in ' + path];
@@ -506,6 +509,7 @@ var openssl = function() {
 							data: out.stdout
 						});
 					}
+					cleanupCallback1();
 				});
 			});
 		});
@@ -742,7 +746,7 @@ var openssl = function() {
 	}
 	
 	var generatePKCS12 = function(certpath, keypath, passin, passout, capath, callback) {
-		tmp.file(function _tempFileCreated(err, pfxpath, fd, cleanupCallback) {
+		tmp.file(function _tempFileCreated(err, pfxpath, fd, cleanupCallback1) {
 			if (err) throw err;
 			var cmd = ['pkcs12 -export -out ' + pfxpath + ' -inkey ' + keypath + ' -in ' + certpath];
 			if(passout) {
@@ -772,29 +776,35 @@ var openssl = function() {
 						});
 					});
 				}
+				cleanupCallback1();
 			});
 		});
 	}
 	
 	this.createPKCS12 = function(cert, key, passin, passout, ca, callback) {
-		tmp.file(function _tempFileCreated(err, certpath, fd, cleanupCallback) {
+		tmp.file(function _tempFileCreated(err, certpath, fd, cleanupCallback1) {
 			if (err) throw err;
 			fs.writeFile(certpath, cert, function() {
-				tmp.file(function _tempFileCreated(err, keypath, fd, cleanupCallback) {
+				tmp.file(function _tempFileCreated(err, keypath, fd, cleanupCallback2) {
 					if (err) throw err;
 					fs.writeFile(keypath, key, function() {
 						if(ca) {
-							tmp.file(function _tempFileCreated(err, capath, fd, cleanupCallback) {
+							tmp.file(function _tempFileCreated(err, capath, fd, cleanupCallback3) {
 								if (err) throw err;
 								fs.writeFile(capath, ca, function() {
 									generatePKCS12(certpath, keypath, passin, passout, capath, function(err, pfx, command) {
 										callback(err, pfx, command);
+										cleanupCallback1();
+										cleanupCallback2();
+										cleanupCallback3();
 									});
 								});
 							});
 						} else {
 							generatePKCS12(certpath, keypath, passin, passout, false, function(err, pfx, command) {
 								callback(err, pfx, command);
+								cleanupCallback1();
+								cleanupCallback2();
 							});
 						}
 					});
@@ -814,16 +824,16 @@ var openssl = function() {
 				});
 				return false;
 			} else {
-				tmp.file(function _tempFileCreated(err, capath, fd, cleanupCallback) {
+				tmp.file(function _tempFileCreated(err, capath, fd, cleanupCallback1) {
 					if (err) throw err;
 					fs.writeFile(capath, ca, function() {
-						tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback) {
+						tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback2) {
 							if (err) throw err;
 							fs.writeFile(csrpath, csr, function() {
-								tmp.file(function _tempFileCreated(err, keypath, fd, cleanupCallback) {
+								tmp.file(function _tempFileCreated(err, keypath, fd, cleanupCallback3) {
 									if (err) throw err;
 									fs.writeFile(keypath, key, function() {
-										tmp.file(function _tempFileCreated(err, csrconfig, fd, cleanupCallback) {
+										tmp.file(function _tempFileCreated(err, csrconfig, fd, cleanupCallback4) {
 											if (err) throw err;
 											fs.writeFile(csrconfig, req.join('\r\n'), function() {
 												var path;
@@ -863,6 +873,10 @@ var openssl = function() {
 															//delete temp serial file
 														});
 													}
+													cleanupCallback1();
+													cleanupCallback2();
+													cleanupCallback3();
+													cleanupCallback4();
 												});
 											});
 										});
@@ -887,13 +901,13 @@ var openssl = function() {
 				});
 				return false;
 			} else {
-				tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback) {
+				tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback1) {
 					if (err) throw err;
 					fs.writeFile(csrpath, csr, function() {
-						tmp.file(function _tempFileCreated(err, keypath, fd, cleanupCallback) {
+						tmp.file(function _tempFileCreated(err, keypath, fd, cleanupCallback2) {
 							if (err) throw err;
 							fs.writeFile(keypath, key, function() {
-								tmp.file(function _tempFileCreated(err, csrconfig, fd, cleanupCallback) {
+								tmp.file(function _tempFileCreated(err, csrconfig, fd, cleanupCallback3) {
 									if (err) throw err;
 									fs.writeFile(csrconfig, req.join('\r\n'), function() {
 										var cmd = ['req -x509 -nodes -in ' + csrpath + ' -days ' + options.days + ' -key ' + keypath + ' -config ' + csrconfig + ' -extensions req_ext'];
@@ -919,6 +933,9 @@ var openssl = function() {
 													}
 												});
 											}
+											cleanupCallback1();
+											cleanupCallback2();
+											cleanupCallback3();
 										});
 									});
 								});
@@ -939,10 +956,10 @@ var openssl = function() {
 				});
 				return false;
 			} else {
-				tmp.file(function _tempFileCreated(err, keypath, fd, cleanupCallback) {
+				tmp.file(function _tempFileCreated(err, keypath, fd, cleanupCallback1) {
 					if (err) throw err;
 					fs.writeFile(keypath, key, function() {
-						tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback) {
+						tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback2) {
 							if (err) throw err;
 							fs.writeFile(csrpath, req.join('\r\n'), function() {
 								var cmd = ['req -new -nodes -key ' + keypath + ' -config ' + csrpath];
@@ -968,6 +985,8 @@ var openssl = function() {
 											}
 										});
 									}
+									cleanupCallback1();
+									cleanupCallback2();
 								});
 							});
 						});
