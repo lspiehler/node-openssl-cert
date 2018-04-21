@@ -716,12 +716,17 @@ var openssl = function() {
 	this.createPKCS7 = function(certs, callback) {
 		//console.log(typeof(certs));
 		var cmd = ['crl2pkcs7 -nocrl']
+		var files = [];
 		for(var i = 0; i <= certs.length - 1; i++) {
 			var name = tmp.tmpNameSync();
+			files.push(name);
 			fs.writeFileSync(name, certs[i]);
 			cmd.push('-certfile ' + name);
 		}
 		runOpenSSLCommand(cmd.join(' '), function(err, out) {
+			for(var i = 0; i <= files.length - 1; i++) {
+				fs.unlinkSync(files[i]);
+			}
 			if(err) {
 				//console.log(out.command);
 				callback(err, out.stdout, {
@@ -798,7 +803,7 @@ var openssl = function() {
 		});
 	}
 	
-	this.CASignCSR = function(csr, options, ca, key, password, callback) {
+	this.CASignCSR = function(csr, options, serial, ca, key, password, callback) {
 		//console.log(csr);
 		options.days = typeof options.days !== 'undefined' ? options.days : 365;
 		generateConfig(options, true, function(err, req) {
@@ -821,7 +826,13 @@ var openssl = function() {
 										tmp.file(function _tempFileCreated(err, csrconfig, fd, cleanupCallback) {
 											if (err) throw err;
 											fs.writeFile(csrconfig, req.join('\r\n'), function() {
-												var cmd = ['x509 -req -in ' + csrpath + ' -days ' + options.days + ' -CA ' + capath + ' -CAkey ' + keypath + ' -extfile ' + csrconfig + ' -extensions req_ext -CAcreateserial'];
+												var path;
+												if(serial) {
+													path = serial;
+												} else {
+													path = tmp.tmpNameSync();
+												}
+												var cmd = ['x509 -req -in ' + csrpath + ' -days ' + options.days + ' -CA ' + capath + ' -CAkey ' + keypath + ' -extfile ' + csrconfig + ' -extensions req_ext -CAserial ' + path + ' -CAcreateserial'];
 												if(password) {
 													cmd.push('-passin pass:' + password);
 												}
@@ -837,11 +848,19 @@ var openssl = function() {
 															}
 														});
 													} else {
-														callback(false, out.stdout, {
-															command: [out.command.replace(keypath, 'rsa.key').replace(csrpath, 'cert.csr').replace(capath, 'ca.crt').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
-															files: {
-																config: req.join('\r\n')
-															}
+														fs.readFile(path, function(err, serial) {
+															callback(false, out.stdout, {
+																command: [out.command.replace(keypath, 'rsa.key').replace(csrpath, 'cert.csr').replace(capath, 'ca.crt').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
+																serial: serial,
+																files: {
+																	config: req.join('\r\n')
+																}
+															});
+														});
+													}
+													if(!serial) {
+														fs.unlink(path, function(err) {
+															//delete temp serial file
 														});
 													}
 												});
