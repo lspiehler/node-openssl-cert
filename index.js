@@ -603,7 +603,7 @@ var openssl = function() {
 								sansatend.push(type + '.' + i  + ' = ' + options.extensions[ext][type][i]);
 							}
 						} else {
-							callback('Invalid ' + ext + ': ' + options.extensions[ext].usages[i], false);
+							callback('Invalid ' + ext + ' type : ' +  '"' + type + '"', false);
 							return false;
 						}
 					}
