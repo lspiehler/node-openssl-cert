@@ -367,18 +367,36 @@ var openssl = function() {
 		} else {
 			param = '';
 		}
-		command = 's_client -connect ' + options.hostname + ':' + options.port + param;
+		command = 's_client -showcerts -connect ' + options.hostname + ':' + options.port + param;
 		runOpenSSLCommand(command, function(err, out) {
 			if(err) {
 				callback(err, false, 'openssl ' + command);
 			} else {
-				try {
-					var certificate = begin + out.stdout.split(begin)[1].split(end)[0] + end;
-				} catch(e) {
+				var placeholder = out.stdout.indexOf(begin);
+				var certs = [];
+				var endoutput = false;
+				if(placeholder <= 0) {
+					endoutput = true;
 					callback('No certificate found in openssl command response', 'No certificate found in openssl command response', 'openssl ' + command);
 					return;
 				}
-				callback(false, certificate, 'openssl ' + command);
+				var shrinkout = out.stdout.substring(placeholder);
+				//console.log(shrinkout);
+				while(!endoutput) {
+					let endofcert = shrinkout.indexOf(end);
+					certs.push(shrinkout.substring(0, endofcert) + end);
+					shrinkout = shrinkout.substring(endofcert); 
+					
+					placeholder = shrinkout.indexOf(begin);
+					//console.log(placeholder);
+					if(placeholder <= 0) {
+						endoutput = true;
+					} else {
+						shrinkout = shrinkout.substring(placeholder);
+					}
+				}
+				callback(false, certs, 'openssl ' + command);
+				return;
 			}
 		});
 		//console.log(options);
