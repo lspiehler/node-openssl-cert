@@ -28,7 +28,9 @@ var openssl = function() {
 				openssl.kill();
 			}, 1000);*/
 			if(terminate) {
-				openssl.kill();
+				if(data.toString().indexOf('Verify return code: 0 (ok)') >= 0 ) {
+					openssl.kill();
+				}
 			}
 		});
 
