@@ -447,7 +447,7 @@ var openssl = function() {
 								runOpenSSLCommand(cmd.join(' '), function(err, out) {
 									if(err) {
 										callback(out.stderr,false);
-										console.log(out);
+										//console.log(out);
 									} else {
 										convertToPKCS8(out.stdout, false, function(err, key) {
 											callback(false,key.data);
