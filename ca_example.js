@@ -14,7 +14,9 @@ var rsakeyoptions = {
 
 var csroptions = {
 	hash: 'sha512',
-	days: 240,
+	//startdate: new Date('2017-02-04 00:00:00'),
+	//enddate: new Date('2018-06-04 04:16:23'),
+	days: 600,
 	subject: {
 		countryName: 'US',
 		stateOrProvinceName: 'Louisiana',
@@ -106,9 +108,10 @@ openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key, cmd) {
 		openssl.CASignCSR(csr, csroptions, '/var/www/node/node-openssl-rest/ca/global/GeoTrustGlobalCA/', false, false, '', function(err, crt, cmd) {
 			if(err) {
 				console.log(err);
+				console.log(cmd);
 			} else {
 				console.log(crt);
-				console.log(cmd.serial);
+				console.log(cmd);
 			}
 		});
 	});

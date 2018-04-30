@@ -5,6 +5,7 @@ var tmp = require('tmp');
 var fs = require('fs');
 const opensslbinpath = 'openssl'; //use full path if not in system PATH
 const tempdir = '/tmp/';
+var moment = require('moment');
 
 var openssl = function() {
 	var runOpenSSLCommand = function(cmd, callback) {
@@ -589,7 +590,7 @@ var openssl = function() {
 		
 		if(persistentca) {
 			req.push('[ ca ]');
-			req.push('default_ca    = CA_default');
+			req.push('default_ca = CA_default');
 			req.push('[ CA_default ]');
 			req.push('base_dir = "' + persistentca + '"');
 			req.push('certificate = $base_dir/ca.crt');
@@ -878,6 +879,11 @@ var openssl = function() {
 								if (err) throw err;
 								fs.writeFile(csrpath, csr, function() {
 									var cmd = ['ca -config ' + config + ' -create_serial -in ' + csrpath + ' -policy signing_policy -batch -notext'];
+									if(options.startdate) {
+										cmd.push('-startdate ' + moment(options.startdate).format('YYMMDDHHmmss') + 'Z -enddate ' + moment(options.enddate).format('YYMMDDHHmmss') + 'Z');
+									} else {
+										cmd.push('-days ' + options.days);
+									}
 									if(password) {
 										cmd.push('-passin pass:' + password);
 									}
