@@ -880,7 +880,7 @@ var openssl = function() {
 								fs.writeFile(csrpath, csr, function() {
 									var cmd = ['ca -config ' + config + ' -create_serial -in ' + csrpath + ' -policy signing_policy -batch -notext'];
 									if(options.startdate) {
-										cmd.push('-startdate ' + moment(options.startdate).format('YYMMDDHHmmss') + 'Z -enddate ' + moment(options.enddate).format('YYMMDDHHmmss') + 'Z');
+										cmd.push('-startdate ' + moment(options.startdate).format('YYYYMMDDHHmmss') + 'Z -enddate ' + moment(options.enddate).format('YYYYMMDDHHmmss') + 'Z');
 									} else {
 										cmd.push('-days ' + options.days);
 									}

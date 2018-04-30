@@ -14,9 +14,9 @@ var rsakeyoptions = {
 
 var csroptions = {
 	hash: 'sha512',
-	//startdate: new Date('2017-02-04 00:00:00'),
-	//enddate: new Date('2018-06-04 04:16:23'),
-	days: 600,
+	startdate: new Date('1984-02-04 00:00:00'),
+	enddate: new Date('2143-06-04 04:16:23'),
+	//days: 600,
 	subject: {
 		countryName: 'US',
 		stateOrProvinceName: 'Louisiana',
