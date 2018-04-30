@@ -535,7 +535,7 @@ var openssl = function() {
 		});
 	}
 	
-	var generateConfig = function(options, cert, callback) {
+	var generateConfig = function(options, cert, persistentca, callback) {
 		options.hash = typeof options.hash !== 'undefined' ? options.hash : 'sha256';
 		const validopts = [
 			'hash',
@@ -585,11 +585,37 @@ var openssl = function() {
 			'email',
 			'otherName'
 		];
-		var req = [
-			'[ req ]',
-			'default_md = ' + options.hash,
-			'prompt = no'
-		]
+		var req = [];
+		
+		if(persistentca) {
+			req.push('[ ca ]');
+			req.push('default_ca    = CA_default');
+			req.push('[ CA_default ]');
+			req.push('base_dir = "' + persistentca + '"');
+			req.push('certificate = $base_dir/ca.crt');
+			req.push('private_key = $base_dir/ca.key');
+			req.push('new_certs_dir = $base_dir/certs ');
+			req.push('database = $base_dir/index.txt');
+			req.push('serial = $base_dir/serial.txt');
+			req.push('unique_subject = no');
+			req.push('default_days = 365');
+			req.push('default_md = ' + options.hash);
+			req.push('preserve = yes');
+			req.push('x509_extensions = req_ext');
+			req.push('email_in_dn = no');
+			req.push('[ signing_policy ]');
+			req.push('countryName = optional');
+			req.push('stateOrProvinceName = optional');
+			req.push('localityName = optional');
+			req.push('organizationName = optional');
+			req.push('organizationalUnitName = optional');
+			req.push('commonName = optional');
+			req.push('emailAddress = optional');
+		}
+		
+		req.push('[ req ]');
+		req.push('default_md = ' + options.hash);
+		req.push('prompt = no');
 		//if(options.extensions) {
 			req.push('req_extensions = req_ext');
 		//}
@@ -833,70 +859,112 @@ var openssl = function() {
 		});
 	}
 	
-	this.CASignCSR = function(csr, options, serial, ca, key, password, callback) {
+	this.CASignCSR = function(csr, options, persistcapath, ca, key, password, callback) {
 		//console.log(csr);
 		options.days = typeof options.days !== 'undefined' ? options.days : 365;
-		generateConfig(options, true, function(err, req) {
-			if(err) {
-				callback(err,{
-					command: null,
-					data: null
-				});
-				return false;
-			} else {
-				tmp.file(function _tempFileCreated(err, capath, fd, cleanupCallback1) {
-					if (err) throw err;
-					fs.writeFile(capath, ca, function() {
-						tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback2) {
-							if (err) throw err;
-							fs.writeFile(csrpath, csr, function() {
-								tmp.file(function _tempFileCreated(err, keypath, fd, cleanupCallback3) {
-									if (err) throw err;
-									fs.writeFile(keypath, key, function() {
-										tmp.file(function _tempFileCreated(err, csrconfig, fd, cleanupCallback4) {
-											if (err) throw err;
-											fs.writeFile(csrconfig, req.join('\r\n'), function() {
-												var path;
-												if(serial) {
-													path = serial;
-												} else {
-													path = tmp.tmpNameSync();
+		if(persistcapath) {
+			generateConfig(options, true, persistcapath, function(err, req) {
+				if(err) {
+					callback(err,{
+						command: null,
+						data: null
+					});
+					return false;
+				} else {
+					tmp.file(function _tempFileCreated(err, config, fd, cleanupCallback1) {
+						if (err) throw err;
+						fs.writeFile(config, req.join('\r\n'), function() {
+							tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback2) {
+								if (err) throw err;
+								fs.writeFile(csrpath, csr, function() {
+									var cmd = ['ca -config ' + config + ' -create_serial -in ' + csrpath + ' -policy signing_policy -batch -notext'];
+									if(password) {
+										cmd.push('-passin pass:' + password);
+									}
+									runOpenSSLCommand(cmd.join(' '), function(err, out) {
+										if(err) {
+											callback(err, out.stdout, {
+												command: [out.command.replace(config, 'config.txt').replace(csrpath, 'cert.csr')],
+												files: {
+													config: req.join('\r\n')
 												}
-												var cmd = ['x509 -req -in ' + csrpath + ' -days ' + options.days + ' -CA ' + capath + ' -CAkey ' + keypath + ' -extfile ' + csrconfig + ' -extensions req_ext -CAserial ' + path + ' -CAcreateserial'];
-												if(password) {
-													cmd.push('-passin pass:' + password);
-												}
-										
-										//console.log(cmd);
-										
-												runOpenSSLCommand(cmd.join(' '), function(err, out) {
-													if(err) {
-														callback(err, out.stdout, {
-															command: [out.command.replace(keypath, 'rsa.key').replace(csrpath, 'cert.csr').replace(capath, 'ca.crt').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
-															files: {
-																config: req.join('\r\n')
-															}
-														});
-													} else {
-														fs.readFile(path, function(err, serial) {
-															callback(false, out.stdout, {
+											});
+										} else {
+											fs.readFile(persistcapath + '/serial.txt', function(err, serial) {
+												callback(false, out.stdout, {
+													command: [out.command.replace(config, 'config.txt').replace(csrpath, 'cert.csr')],
+													serial: serial.toString(),
+													files: {
+														config: req.join('\r\n')
+													}
+												});
+											});
+										}
+										cleanupCallback1();
+										cleanupCallback2();
+									});
+								});
+							});
+						});
+					});
+				}
+			});
+		} else {
+			generateConfig(options, true, false, function(err, req) {
+				if(err) {
+					callback(err,{
+						command: null,
+						data: null
+					});
+					return false;
+				} else {
+					tmp.file(function _tempFileCreated(err, capath, fd, cleanupCallback1) {
+						if (err) throw err;
+						fs.writeFile(capath, ca, function() {
+							tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback2) {
+								if (err) throw err;
+								fs.writeFile(csrpath, csr, function() {
+									tmp.file(function _tempFileCreated(err, keypath, fd, cleanupCallback3) {
+										if (err) throw err;
+										fs.writeFile(keypath, key, function() {
+											tmp.file(function _tempFileCreated(err, csrconfig, fd, cleanupCallback4) {
+												if (err) throw err;
+												fs.writeFile(csrconfig, req.join('\r\n'), function() {
+													var path = tmp.tmpNameSync();
+													var cmd = ['x509 -req -in ' + csrpath + ' -days ' + options.days + ' -CA ' + capath + ' -CAkey ' + keypath + ' -extfile ' + csrconfig + ' -extensions req_ext -CAserial ' + path + ' -CAcreateserial'];
+													if(password) {
+														cmd.push('-passin pass:' + password);
+													}
+											
+											//console.log(cmd);
+											
+													runOpenSSLCommand(cmd.join(' '), function(err, out) {
+														if(err) {
+															callback(err, out.stdout, {
 																command: [out.command.replace(keypath, 'rsa.key').replace(csrpath, 'cert.csr').replace(capath, 'ca.crt').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
-																serial: serial,
 																files: {
 																	config: req.join('\r\n')
 																}
 															});
-														});
-													}
-													if(!serial) {
+														} else {
+															fs.readFile(path, function(err, serial) {
+																callback(false, out.stdout, {
+																	command: [out.command.replace(keypath, 'rsa.key').replace(csrpath, 'cert.csr').replace(capath, 'ca.crt').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
+																	serial: serial.toString(),
+																	files: {
+																		config: req.join('\r\n')
+																	}
+																});
+															});
+														}
 														fs.unlink(path, function(err) {
 															//delete temp serial file
 														});
-													}
-													cleanupCallback1();
-													cleanupCallback2();
-													cleanupCallback3();
-													cleanupCallback4();
+														cleanupCallback1();
+														cleanupCallback2();
+														cleanupCallback3();
+														cleanupCallback4();
+													});
 												});
 											});
 										});
@@ -905,15 +973,15 @@ var openssl = function() {
 							});
 						});
 					});
-				});
-			}
-		});
+				}
+			});
+		}
 	}
 	
 	this.selfSignCSR = function(csr, options, key, password, callback) {
 		//console.log(csr);
 		options.days = typeof options.days !== 'undefined' ? options.days : 365;
-		generateConfig(options, true, function(err, req) {
+		generateConfig(options, true, false, function(err, req) {
 			if(err) {
 				callback(err,{
 					command: null,
@@ -968,7 +1036,7 @@ var openssl = function() {
 	}
 	
 	this.generateCSR = function(options, key, password, callback) {
-		generateConfig(options, false, function(err, req) {
+		generateConfig(options, false, false, function(err, req) {
 			if(err) {
 				callback(err,{
 					command: null,

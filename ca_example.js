@@ -101,6 +101,19 @@ var cacsroptions = {
 	}
 }
 
+openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key, cmd) {
+	openssl.generateCSR(csroptions, key, 'test', function(err, csr, cmd) {
+		openssl.CASignCSR(csr, csroptions, '/var/www/node/node-openssl-rest/ca/global/GeoTrustGlobalCA/', false, false, '', function(err, crt, cmd) {
+			if(err) {
+				console.log(err);
+			} else {
+				console.log(crt);
+				console.log(cmd.serial);
+			}
+		});
+	});
+});
+return;
 openssl.generateRSAPrivateKey(rsakeyoptions, function(err, cakey, cmd) {
 	openssl.generateCSR(cacsroptions, cakey, 'test', function(err, csr, cmd) {
 		if(err) {
@@ -115,7 +128,7 @@ openssl.generateRSAPrivateKey(rsakeyoptions, function(err, cakey, cmd) {
 						openssl.generateCSR(csroptions, key, 'test', function(err, csr, cmd) {
 							//console.log(cakey);
 							//console.log(crt);
-							openssl.CASignCSR(csr, cacsroptions, cacrt ,cakey, 'test', function(err, crt, cmd) {
+							openssl.CASignCSR(csr, cacsroptions, false, cacrt ,cakey, 'test', function(err, crt, cmd) {
 								//console.log(cmd);
 								if(err) console.log(err);
 								console.log(crt);
