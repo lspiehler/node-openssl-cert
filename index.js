@@ -640,6 +640,10 @@ var openssl = function() {
 			}
 		}
 		req.push('[ req_ext ]');
+		if(cert) {
+			req.push('subjectKeyIdentifier = hash');
+			req.push('authorityKeyIdentifier = keyid:always,issuer');
+		}
 		if(options.extensions) {
 			//req.push('[ req_ext ]');
 			for(var ext in options.extensions) {
@@ -711,10 +715,6 @@ var openssl = function() {
 							if(typeof(options.extensions[ext][type]) == reqtype) {
 								if (options.extensions[ext][type]) {
 									bccmd.push('CA:true');
-									if(cert) {
-										req.push('subjectKeyIdentifier = hash');
-										req.push('authorityKeyIdentifier = keyid:always,issuer');
-									}
 								} else {
 									bccmd.push('CA:false');
 								}
