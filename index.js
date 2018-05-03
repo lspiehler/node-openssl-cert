@@ -477,6 +477,28 @@ var openssl = function() {
 		importRSAPrivateKey(key, password, callback);
 	}
 	
+	this.convertPEMtoDER = function(cert, callback) {
+		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
+			if (err) throw err;
+			fs.writeFile(path, cert, function() {
+				tmp.file(function _tempFileCreated(err, derpath, fd, cleanupCallback2) {
+					var cmd = ['x509 -inform PEM -outform DER -in ' + path + ' -out ' + derpath];
+					runOpenSSLCommand(cmd.join(' '), function(err, out) {
+						if(err) {
+							callback(true, false, out.command.replace(path, 'cert.pem').replace(derpath, 'cert.cer'));
+						} else {
+							fs.readFile(derpath, function(err, data) {
+								callback(false, data, out.command.replace(path, 'cert.pem').replace(derpath, 'cert.cer'));
+							});
+						}
+						cleanupCallback1();
+						cleanupCallback2();
+					});
+				});
+			});
+		});
+	}
+	
 	var convertToPKCS1 = function(key, encryption, callback) {
 		//console.log(key);
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
