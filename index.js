@@ -670,6 +670,7 @@ var openssl = function() {
 		}
 		if(options.extensions) {
 			//req.push('[ req_ext ]');
+			var endconfig = [];
 			for(var ext in options.extensions) {
 				if(ext == 'SANs') {
 					var sansatend = [];
@@ -772,6 +773,33 @@ var openssl = function() {
 						callback('Basic constraints cannot contain only \'critical\'', false);
 						return false;
 					}
+				} else if (ext == 'authorityInfoAccess') {
+					let aiaconfig = [];
+					if(options.extensions[ext]['caIssuers']) {
+						for(var i = 0; i <= options.extensions[ext]['caIssuers'].length - 1; i++) {
+							aiaconfig.push('caIssuers;URI.' + i + ' = ' + options.extensions[ext]['caIssuers'][i]);
+						}
+					}
+					if(options.extensions[ext]['OCSP']) {
+						for(var i = 0; i <= options.extensions[ext]['OCSP'].length - 1; i++) {
+							aiaconfig.push('OCSP;URI.' + i + ' = ' + options.extensions[ext]['OCSP'][i]);
+						}
+					}
+					if(aiaconfig.length > 0) {
+						req.push('authorityInfoAccess = @issuer_info');
+						endconfig.push('[ issuer_info ]');
+						for(var i = 0; i <= aiaconfig.length - 1; i++) {
+							endconfig.push(aiaconfig[i]);
+						}
+					}
+				} else if (ext == 'crlDistributionPoints') {
+					if(options.extensions[ext].length > 0) {
+						req.push('crlDistributionPoints = @crl_info');
+						endconfig.push('[ crl_info ]');
+						for(var i = 0; i <= options.extensions[ext].length - 1; i++) {
+							endconfig.push('URI.' + i + ' = ' + options.extensions[ext][i]);
+						}
+					}
 				} else {
 					callback('Invalid extension: ' + ext, false);
 					return false;
@@ -780,6 +808,11 @@ var openssl = function() {
 			if(sansatend) {
 				for(var i = 0; i <= sansatend.length - 1; i++) {
 					req.push(sansatend[i]);
+				}
+			}
+			if(endconfig.length > 0) {
+				for(var i = 0; i <= endconfig.length - 1; i++) {
+					req.push(endconfig[i]);
 				}
 			}
 		}
