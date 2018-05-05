@@ -623,6 +623,7 @@ var openssl = function() {
 			req.push('serial = $base_dir/serial.txt');
 			req.push('unique_subject = no');
 			req.push('default_days = 365');
+			req.push('default_crl_days = 30'):	
 			req.push('default_md = ' + options.hash);
 			req.push('preserve = yes');
 			req.push('x509_extensions = req_ext');
