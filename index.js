@@ -435,7 +435,7 @@ var openssl = function() {
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 			if (err) throw err;
 			fs.writeFile(path, key, function() {
-				var pass = ' ';
+				var pass = '_PLAIN_'; //Just pass a bogus password to complete the command properly. It will not be used for unencrypted keys and helps prevent circumstances when certain versions of openssl will prompt for a password when none is provided
 				if(password) {
 					pass = password;
 				}
@@ -445,29 +445,36 @@ var openssl = function() {
 						cmd.push('-inform DER');
 						runOpenSSLCommand(cmd.join(' '), function(err, out) {
 							if(err) {
+								if(!password) {
+				                                        pass = '';
+                                				}
 								cmd = ['pkcs12 -passin pass:' + pass + ' -in ' + path + ' -nocerts -nodes'];
 								runOpenSSLCommand(cmd.join(' '), function(err, out) {
 									if(err) {
+										cleanupCallback1();
 										callback(out.stderr,false);
 										//console.log(out);
 									} else {
 										convertToPKCS8(out.stdout, false, function(err, key) {
+											cleanupCallback1();
 											callback(false,key.data);
 										});
 									}
 								});
 							} else {
 								convertToPKCS8(out.stdout, false, function(err, key) {
+									cleanupCallback1();
 									callback(false,key.data);
 								});
 							}
 						});
 					} else {
 						convertToPKCS8(out.stdout, false, function(err, key) {
+							cleanupCallback1();
 							callback(false,key.data);
 						});
 					}
-					cleanupCallback1();
+					//cleanupCallback1();
 				});
 			});
 		});
