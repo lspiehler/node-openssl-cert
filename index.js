@@ -435,7 +435,7 @@ var openssl = function() {
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 			if (err) throw err;
 			fs.writeFile(path, key, function() {
-				var pass = '';
+				var pass = ' ';
 				if(password) {
 					pass = password;
 				}
