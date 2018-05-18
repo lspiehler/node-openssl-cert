@@ -973,6 +973,12 @@ var openssl = function() {
 				} else {
 					tmp.file(function _tempFileCreated(err, config, fd, cleanupCallback1) {
 						if (err) throw err;
+						//correct ca path
+						for(var i = 0; i<= req.length - 1; i++) {
+							if(req[i]=='base_dir = .') {
+								req[i] = 'base_dir = "' + persistcapath + '"';
+							}
+						}
 						fs.writeFile(config, req.join('\r\n'), function() {
 							tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback2) {
 								if (err) throw err;
