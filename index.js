@@ -974,12 +974,15 @@ var openssl = function() {
 					tmp.file(function _tempFileCreated(err, config, fd, cleanupCallback1) {
 						if (err) throw err;
 						//correct ca path
+						var careq = [];
 						for(var i = 0; i<= req.length - 1; i++) {
 							if(req[i]=='base_dir = .') {
-								req[i] = 'base_dir = "' + persistcapath + '"';
+								careq.push('base_dir = "' + persistcapath + '"');
+							} else {
+								careq.push(req[i]);
 							}
 						}
-						fs.writeFile(config, req.join('\r\n'), function() {
+						fs.writeFile(config, careq.join('\r\n'), function() {
 							tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback2) {
 								if (err) throw err;
 								fs.writeFile(csrpath, csr, function() {
