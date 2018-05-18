@@ -648,7 +648,7 @@ var openssl = function() {
 			req.push('[ ca ]');
 			req.push('default_ca = CA_default');
 			req.push('[ CA_default ]');
-			req.push('base_dir = "' + persistentca + '"');
+			req.push('base_dir = .');
 			req.push('certificate = $base_dir/ca.crt');
 			req.push('private_key = $base_dir/ca.key');
 			req.push('new_certs_dir = $base_dir/certs ');
