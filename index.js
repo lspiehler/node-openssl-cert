@@ -436,26 +436,36 @@ var openssl = function() {
 			if (err) throw err;
 			fs.writeFile(path, key, function() {
 				var pass = '_PLAIN_'; //Just pass a bogus password to complete the command properly. It will not be used for unencrypted keys and helps prevent circumstances when certain versions of openssl will prompt for a password when none is provided
+				var passcmd = '-passin pass:' + pass;
 				if(password) {
-					pass = password;
+					var passfile = tmp.fileSync();
+					fs.writeFileSync(passfile.name, password);
+					passcmd = '-passin file:' + passfile.name;
 				}
-				var cmd = ['rsa -passin pass:' + pass + ' -in ' + path];
+				var cmd = ['rsa ' + passcmd + ' -in ' + path];
 				runOpenSSLCommand(cmd.join(' '), function(err, out) {
 					if(err) {
 						cmd.push('-inform DER');
 						runOpenSSLCommand(cmd.join(' '), function(err, out) {
 							if(err) {
 								if(!password) {
-				                                        pass = '';
-                                				}
-								cmd = ['pkcs12 -passin pass:' + pass + ' -in ' + path + ' -nocerts -nodes'];
+									pass = '';
+									passcmd = '-passin pass:' + pass;
+                                }
+								cmd = ['pkcs12 ' + passcmd + ' -in ' + path + ' -nocerts -nodes'];
 								runOpenSSLCommand(cmd.join(' '), function(err, out) {
 									if(err) {
+										if(password) {
+											passfile.removeCallback();
+										}
 										cleanupCallback1();
 										callback(out.stderr,false);
 										//console.log(out);
 									} else {
 										convertToPKCS8(out.stdout, false, function(err, key) {
+											if(password) {
+												passfile.removeCallback();
+											}
 											cleanupCallback1();
 											callback(false,key.data);
 										});
@@ -463,6 +473,9 @@ var openssl = function() {
 								});
 							} else {
 								convertToPKCS8(out.stdout, false, function(err, key) {
+									if(password) {
+										passfile.removeCallback();
+									}
 									cleanupCallback1();
 									callback(false,key.data);
 								});
@@ -470,6 +483,9 @@ var openssl = function() {
 						});
 					} else {
 						convertToPKCS8(out.stdout, false, function(err, key) {
+							if(password) {
+								passfile.removeCallback();
+							}
 							cleanupCallback1();
 							callback(false,key.data);
 						});
@@ -513,7 +529,9 @@ var openssl = function() {
 			fs.writeFile(path, key, function() {
 				var cmd = ['rsa -in ' + path];
 				if(encryption) {
-					cmd.push('-' + encryption.cipher + ' -passin pass:' + encryption.password + ' -passout pass:' + encryption.password);// + ' -passout pass:' + encryption.password + ' -' + encryption.cipher);
+					var passfile = tmp.fileSync();
+					fs.writeFileSync(passfile.name, encryption.password);
+					cmd.push('-' + encryption.cipher + ' -passin file:' + passfile.name + ' -passout file:' + passfile.name);// + ' -passout pass:' + encryption.password + ' -' + encryption.cipher);
 				}
 				//console.log(cmd);
 				
@@ -529,6 +547,9 @@ var openssl = function() {
 							data: out.stdout
 						});
 					}
+					if(encryption) {
+						passfile.removeCallback();
+					}
 					cleanupCallback1();
 				});
 			});
@@ -542,7 +563,9 @@ var openssl = function() {
 			fs.writeFile(path, key, function() {
 				var cmd = ['pkcs8 -topk8 -inform PEM -outform PEM -in ' + path];
 				if(password) {
-					cmd.push('-passin pass:' + password);// + ' -passout pass:' + encryption.password + ' -' + encryption.cipher);
+					var passfile = tmp.fileSync();
+					fs.writeFileSync(passfile.name, password);
+					cmd.push('-passin file:' + passfile.name);// + ' -passout pass:' + encryption.password + ' -' + encryption.cipher);
 				} else {
 					cmd.push('-nocrypt');
 				}
@@ -559,6 +582,9 @@ var openssl = function() {
 							command: out.command.replace(path, 'rsa.key'),
 							data: out.stdout
 						});
+					}
+					if(password) {
+						passfile.removeCallback();
 					}
 					cleanupCallback1();
 				});
@@ -630,7 +656,7 @@ var openssl = function() {
 			req.push('serial = $base_dir/serial.txt');
 			req.push('unique_subject = no');
 			req.push('default_days = 365');
-			req.push('default_crl_days = 30');	
+			req.push('default_crl_days = 1');	
 			req.push('default_md = ' + options.hash);
 			req.push('preserve = yes');
 			req.push('x509_extensions = req_ext');
@@ -861,12 +887,16 @@ var openssl = function() {
 			if (err) throw err;
 			var cmd = ['pkcs12 -export -out ' + pfxpath + ' -inkey ' + keypath + ' -in ' + certpath];
 			if(passout) {
-				cmd.push('-passout pass:' + passout);
+				var passoutfile = tmp.fileSync();
+				fs.writeFileSync(passoutfile.name, passout);
+				cmd.push('-passout file:' + passoutfile.name);
 			} else {
 				cmd.push('-nodes -passout pass:');
 			}
 			if(passin) {
-				cmd.push('-passin pass:' + passin);
+				var passinfile = tmp.fileSync();
+				fs.writeFileSync(passinfile.name, passin);
+				cmd.push('-passin file:' + passinfile.name);
 			} else {
 				cmd.push('-passin pass:');
 			}
@@ -886,6 +916,11 @@ var openssl = function() {
 							command: [out.command.replace(keypath, 'rsa.key').replace(certpath, 'cert.crt').replace(pfxpath, 'cert.pfx').replace(capath, 'ca.crt') + ' -out cert.pfx']
 						});
 					});
+				}if(passout) {
+					passoutfile.removeCallback();
+				}
+				if(passin) {
+					passinfile.removeCallback();
 				}
 				cleanupCallback1();
 			});
@@ -949,7 +984,9 @@ var openssl = function() {
 										cmd.push('-days ' + options.days);
 									}
 									if(password) {
-										cmd.push('-passin pass:' + password);
+										var passfile = tmp.fileSync();
+										fs.writeFileSync(passfile.name, password);
+										cmd.push('-passin file:' + passfile.name);
 									}
 									runOpenSSLCommand(cmd.join(' '), function(err, out) {
 										if(err) {
@@ -969,6 +1006,9 @@ var openssl = function() {
 													}
 												});
 											});
+										}
+										if(password) {
+											passfile.removeCallback();
 										}
 										cleanupCallback1();
 										cleanupCallback2();
@@ -1003,7 +1043,9 @@ var openssl = function() {
 													var path = tmp.tmpNameSync();
 													var cmd = ['x509 -req -in ' + csrpath + ' -days ' + options.days + ' -CA ' + capath + ' -CAkey ' + keypath + ' -extfile ' + csrconfig + ' -extensions req_ext -CAserial ' + path + ' -CAcreateserial'];
 													if(password) {
-														cmd.push('-passin pass:' + password);
+														var passfile = tmp.fileSync();
+														fs.writeFileSync(passfile.name, password);
+														cmd.push('-passin file:' + passfile.name);
 													}
 											
 											//console.log(cmd);
@@ -1030,6 +1072,9 @@ var openssl = function() {
 														fs.unlink(path, function(err) {
 															//delete temp serial file
 														});
+														if(password) {
+															passfile.removeCallback();
+														}
 														cleanupCallback1();
 														cleanupCallback2();
 														cleanupCallback3();
@@ -1070,7 +1115,9 @@ var openssl = function() {
 									fs.writeFile(csrconfig, req.join('\r\n'), function() {
 										var cmd = ['req -x509 -nodes -in ' + csrpath + ' -days ' + options.days + ' -key ' + keypath + ' -config ' + csrconfig + ' -extensions req_ext'];
 										if(password) {
-											cmd.push('-passin pass:' + password);
+											var passfile = tmp.fileSync();
+											fs.writeFileSync(passfile.name, password);
+											cmd.push('-passin file:' + passfile.name);
 										}
 								
 								//console.log(cmd);
@@ -1090,6 +1137,9 @@ var openssl = function() {
 														config: req.join('\r\n')
 													}
 												});
+											}
+											if(password) {
+												passfile.removeCallback();
 											}
 											cleanupCallback1();
 											cleanupCallback2();
@@ -1122,7 +1172,9 @@ var openssl = function() {
 							fs.writeFile(csrpath, req.join('\r\n'), function() {
 								var cmd = ['req -new -nodes -key ' + keypath + ' -config ' + csrpath];
 								if(password) {
-									cmd.push('-passin pass:' + password);
+									var passfile = tmp.fileSync();
+									fs.writeFileSync(passfile.name, password);
+									cmd.push('-passin file:' + passfile.name);
 								}
 						
 						//console.log(cmd);
@@ -1142,6 +1194,9 @@ var openssl = function() {
 												config: req.join('\r\n')
 											}
 										});
+									}
+									if(password) {
+										passfile.removeCallback();
 									}
 									cleanupCallback1();
 									cleanupCallback2();
@@ -1183,7 +1238,9 @@ var openssl = function() {
 		for (var option in options) {
 			if(validoptions.indexOf(option) >= 0) {
 				if(option=='encryption' && options[option]) {
-					cmd.push('-pass pass:' + options[option].password + ' -' + options[option].cipher);
+					var passfile = tmp.fileSync();
+					fs.writeFileSync(passfile.name, options[option].password);
+					cmd.push('-pass file:' + passfile.name + ' -' + options[option].cipher);
 				} else if(options[option] && option.indexOf('rsa_keygen_') == 0) {
 					cmd.push('-pkeyopt ' + option + ':' + options[option]);
 				}
@@ -1196,10 +1253,16 @@ var openssl = function() {
 		if(options.format=='PKCS8') {
 			runOpenSSLCommand(cmd.join(' '), function(err, out) {
 				//console.log(out);
+				if(option=='encryption' && options[option]) {
+					passfile.removeCallback();
+				}
 				callback(false, out.stdout, [out.command + ' -out rsa.key']);
 			});
 		} else if (options.format == 'PKCS1' ) {
 			runOpenSSLCommand(cmd.join(' '), function(err, outkey) {
+				if(option=='encryption' && options[option]) {
+					passfile.removeCallback();
+				}
 				if(err) {
 					callback(err, false);
 				} else {
