@@ -909,12 +909,14 @@ var openssl = function() {
 					callback(err, out.stdout, {
 						command: [out.command.replace(keypath, 'rsa.key').replace(certpath, 'cert.crt').replace(pfxpath, 'cert.pfx').replace(capath, 'ca.crt') + ' -out cert.pfx']
 					});
+					cleanupCallback1();
 				} else {
 					fs.readFile(pfxpath, function(err, data) {
 						//console.log(out.command);
 						callback(false, data, {
 							command: [out.command.replace(keypath, 'rsa.key').replace(certpath, 'cert.crt').replace(pfxpath, 'cert.pfx').replace(capath, 'ca.crt') + ' -out cert.pfx']
 						});
+						cleanupCallback1();
 					});
 				}if(passout) {
 					passoutfile.removeCallback();
@@ -922,7 +924,6 @@ var openssl = function() {
 				if(passin) {
 					passinfile.removeCallback();
 				}
-				cleanupCallback1();
 			});
 		});
 	}
