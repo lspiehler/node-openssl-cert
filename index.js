@@ -92,7 +92,12 @@ var openssl = function() {
 		var sanarr = sans.content[0].split(', ');
 		for(var i = 0; i <= sanarr.length - 1; i++) {
 			var san = sanarr[i].split(':');
-			var type = san[0];
+			var type;
+			if(san[0]=='IP Address') {
+				type = 'IP';
+			} else {
+				type = san[0];
+			}
 			var value = san[1];
 			//console.log(type + ' - ' + value);
 			if(names[type]) {
