@@ -501,8 +501,77 @@ var openssl = function() {
 		});
 	}
 	
+	var importECCPrivateKey = function(key, password, callback) {
+		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
+			if (err) throw err;
+			fs.writeFile(path, key, function() {
+				var pass = '_PLAIN_'; //Just pass a bogus password to complete the command properly. It will not be used for unencrypted keys and helps prevent circumstances when certain versions of openssl will prompt for a password when none is provided
+				var passcmd = '-passin pass:' + pass;
+				if(password) {
+					var passfile = tmp.fileSync();
+					fs.writeFileSync(passfile.name, password);
+					passcmd = '-passin file:' + passfile.name;
+				}
+				var cmd = ['ec ' + passcmd + ' -in ' + path];
+				runOpenSSLCommand(cmd.join(' '), function(err, out) {
+					if(err) {
+						cmd.push('-inform DER');
+						runOpenSSLCommand(cmd.join(' '), function(err, out) {
+							if(err) {
+								if(!password) {
+									pass = '';
+									passcmd = '-passin pass:' + pass;
+                                }
+								cmd = ['pkcs12 ' + passcmd + ' -in ' + path + ' -nocerts -nodes'];
+								runOpenSSLCommand(cmd.join(' '), function(err, out) {
+									if(err) {
+										if(password) {
+											passfile.removeCallback();
+										}
+										cleanupCallback1();
+										callback(out.stderr,false);
+										//console.log(out);
+									} else {
+										convertToPKCS8(out.stdout, false, function(err, key) {
+											if(password) {
+												passfile.removeCallback();
+											}
+											cleanupCallback1();
+											callback(false,key.data);
+										});
+									}
+								});
+							} else {
+								convertToPKCS8(out.stdout, false, function(err, key) {
+									if(password) {
+										passfile.removeCallback();
+									}
+									cleanupCallback1();
+									callback(false,key.data);
+								});
+							}
+						});
+					} else {
+						convertToPKCS8(out.stdout, false, function(err, key) {
+							if(password) {
+								passfile.removeCallback();
+							}
+							cleanupCallback1();
+							callback(false,key.data);
+						});
+					}
+					//cleanupCallback1();
+				});
+			});
+		});
+	}
+	
 	this.importRSAPrivateKey = function(key, password, callback) {
 		importRSAPrivateKey(key, password, callback);
+	}
+	
+	this.importECCPrivateKey = function(key, password, callback) {
+		importECCPrivateKey(key, password, callback);
 	}
 	
 	this.convertPEMtoDER = function(cert, callback) {
@@ -570,7 +639,45 @@ var openssl = function() {
 				if(password) {
 					var passfile = tmp.fileSync();
 					fs.writeFileSync(passfile.name, password);
-					cmd.push('-passin file:' + passfile.name);// + ' -passout pass:' + encryption.password + ' -' + encryption.cipher);
+					cmd.push('-nocrypt -passin file:' + passfile.name);// + ' -passout pass:' + encryption.password + ' -' + encryption.cipher);
+				} else {
+					cmd.push('-nocrypt');
+				}
+				//console.log(cmd);
+				
+				runOpenSSLCommand(cmd.join(' '), function(err, out) {
+					if(err) {
+						callback(err,{
+							command: out.command.replace(path, 'rsa.key'),
+							data: out.stdout
+						});
+					} else {
+						callback(false,{
+							command: out.command.replace(path, 'rsa.key'),
+							data: out.stdout
+						});
+					}
+					if(password) {
+						passfile.removeCallback();
+					}
+					cleanupCallback1();
+				});
+			});
+		});
+	}
+	
+	var convertToPKCS8Encrypt = function(key, password, callback) {
+		//console.log(key);
+		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
+			if (err) throw err;
+			fs.writeFile(path, key, function() {
+				var cmd = ['pkcs8 -topk8 -inform PEM -outform PEM -in ' + path];
+				if(password) {
+					var passfile = tmp.fileSync();
+					fs.writeFileSync(passfile.name, password);
+					var passout = tmp.fileSync();
+					fs.writeFileSync(passout.name, password);
+					cmd.push('-passin file:' + passfile.name + ' -passout file:' + passout.name);// + ' -passout pass:' + encryption.password + ' -' + encryption.cipher);
 				} else {
 					cmd.push('-nocrypt');
 				}
@@ -1224,6 +1331,67 @@ var openssl = function() {
 		});
 	}
 	
+	this.getAvailableCurves = function(callback) {
+		let cmd = ['ecparam -list_curves'];
+		runOpenSSLCommand(cmd.join(' '), function(err, out) {
+			if(err) {
+				callback(err, false, null);
+			} else {
+				let lines = out.stdout.split('\n');
+				let curves = Array();
+				//last line of output was blank on current version of openssl
+				for(let i = 0; i <= lines.length - 2; i++) {
+					let curve = {};
+					let line = lines[i].split(':');
+					curve['curve'] = line[0].trim(' ');
+					curve['description'] = line[1].trim(' ');
+					curves.push(curve);
+				}
+				callback(false, curves, [out.command]);
+			}
+		});
+	}
+	
+	this.generateECCPrivateKey = function(options, callback) {
+		let cmd = ['ecparam -name '+ options.curve +' -param_enc explicit -genkey -noout']
+		runOpenSSLCommand(cmd.join(' '), function(err, out) {
+			let firstcmd = out;
+			if(err) {
+				callback(err, false, null);
+			} else {
+				if(options.encryption) {
+					tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
+						if (err) throw err;
+						fs.writeFile(path, out.stdout, function() {
+							var passoutfile = tmp.fileSync();
+							fs.writeFileSync(passoutfile.name, options.encryption.password);
+							let cmd = ['ec -in '+ path +' -'+ options.encryption.cipher +' -passout file:' + passoutfile.name];
+							runOpenSSLCommand(cmd.join(' '), function(err, out) {
+								let secondcmd = out;
+								cleanupCallback1();
+								if(options.format=="PKCS8") {
+									convertToPKCS8Encrypt(out.stdout, options.encryption.password, function(err, key) {
+										callback(false,key.data,[firstcmd.command, secondcmd.command.replace(path, 'ecc.key').replace('file:'+passoutfile.name,'pass:yourpassword'),out.command]);
+									});
+								} else {
+									callback(false, out.stdout, [firstcmd.command, out.command.replace(path, 'ecc.key').replace('file:'+passoutfile.name,'pass:yourpassword')]);
+								}
+							});
+						});
+					});
+				} else {
+					if(options.format=="PKCS8") {
+						convertToPKCS8(out.stdout, false, function(err, key) {
+							callback(false,key.data,[out.command, key.command]);
+						});
+					} else {
+						callback(false, out.stdout, [out.command + ' -out ecc.key']);
+					}
+				}
+			}
+		});
+	}
+
 	this.generateRSAPrivateKey = function(options, callback) {
 		const type = 'RSA';
 		let pkeyopt = [];
