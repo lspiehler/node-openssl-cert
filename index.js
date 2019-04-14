@@ -411,6 +411,65 @@ var openssl = function() {
 		//console.log(options);
 	}
 	
+	var convertTime = function(line) {
+		let timestr = Array();
+		for(let i = 1; i <= line.length - 1; i++) {
+			timestr.push(line[i]);
+		}
+		var momentDate = Date(timestr.join(':'));
+		return momentDate;
+	}
+	
+	var getCertAttributes = function(certificate) {
+		var outattrs = {};
+		var attrs = certificate.split('\n');
+		for(var i = 0; i <= attrs.length - 1; i++) {
+			let data = attrs[i].split(':');
+			let attr = data[0].trim(' ');
+			if(attr=='Public Key Algorithm') {
+				outattrs[attr] = data[1].trim(' ');
+			} else if(attr=='Signature Algorithm') {
+				outattrs[attr] = data[1].trim(' ');
+			} else if(attr=='Serial Number') {
+				outattrs[attr] = attrs[i+1].trim(' ');
+			} else if(attr=='Public-Key') {
+				outattrs[attr] = data[1].trim(' ').split(' ')[0].substring(1);
+			} else if(attr=='Not After') {
+				outattrs[attr] = convertTime(data);
+			} else if(attr=='Not Before') {
+				outattrs[attr] = convertTime(data);
+			}
+		}
+		return outattrs;
+	}
+	
+	this.getCertInfo = function(cert, callback) {
+		var cmd = [];
+		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
+			if (err) throw err;
+			fs.writeFile(path, cert, function() {
+				cmd.push('x509 -in ' + path + ' -text -noout');
+				runOpenSSLCommand(cmd.join(), function(err, out) {
+					if(err) {
+						callback(true,out.stderr,cmd.join());
+					} else {
+						var extensions = getx509v3Attributes(out.stdout);
+						var subject = getSubject(out.stdout);
+						var attrs = getCertAttributes(out.stdout);
+						var csroptions = {
+							extensions: extensions,
+							subject: subject,
+							attributes: attrs
+						}
+						//callback(false,out.stdout,cmd.join());
+						callback(false,csroptions,'openssl ' + cmd.join().replace(path, 'cert.crt'));
+					}
+					cleanupCallback1();
+				});
+			});
+		});
+	}
+	
 	this.convertCertToCSR = function(cert, callback) {
 		var cmd = [];
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
