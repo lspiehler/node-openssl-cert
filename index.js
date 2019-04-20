@@ -11,7 +11,7 @@ var openssl = function(options) {
 	
 	if(options) {
 		if(options.binpath) {
-			opensslbinpath = options.binpath + 'openssl';
+			opensslbinpath = options.binpath;
 		} else {
 			
 		}

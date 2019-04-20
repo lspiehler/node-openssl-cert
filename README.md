@@ -37,7 +37,7 @@ If the openssl executable is not in your system path, provide it in an options o
 const node_openssl = require('node-openssl-cert');
 
 var options = {
-	binpath: 'C:/Program Files/OpenVPN/bin/'
+	binpath: 'C:/Program Files/OpenVPN/bin/openssl.exe'
 }
 
 const openssl = new node_openssl(options);
