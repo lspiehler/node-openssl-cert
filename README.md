@@ -32,6 +32,17 @@ const node_openssl = require('node-openssl-cert');
 const openssl = new node_openssl();
 ```
 
+If the openssl executable is not in your system path, provide it in an options object and pass it as an argument
+```
+const node_openssl = require('node-openssl-cert');
+
+var options = {
+	binpath: 'C:/Program Files/OpenVPN/bin/'
+}
+
+const openssl = new node_openssl(options);
+```
+
 Generate an RSA privatekey with the default options and show the openssl command used to create it.
 ```
 openssl.generateRSAPrivateKey({}, function(err, key, cmd) {

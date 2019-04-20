@@ -3,11 +3,22 @@ const { spawn } = require( 'child_process' );
 const https = require('https');
 var tmp = require('tmp');
 var fs = require('fs');
-const opensslbinpath = 'openssl'; //use full path if not in system PATH
+var opensslbinpath = 'openssl'; //use full path if not in system PATH
 const tempdir = '/tmp/';
 var moment = require('moment');
 
-var openssl = function() {
+var openssl = function(options) {
+	
+	if(options) {
+		if(options.binpath) {
+			opensslbinpath = options.binpath + 'openssl';
+		} else {
+			
+		}
+	} else {
+		
+	}
+	
 	var runOpenSSLCommand = function(cmd, callback) {
 		const stdoutbuff = [];
 		const stderrbuff = [];
