@@ -673,13 +673,19 @@ var openssl = function(options) {
 			fs.writeFile(path, key, function() {
 				var cmd = ['rsa -in ' + path];
 				if(encryption) {
+					//var passfile = tmp.fileSync();
+					//fs.writeFileSync(passfile.name, encryption.password);
 					var passfile = tmp.fileSync();
-					fs.writeFileSync(passfile.name, encryption.password);
-					cmd.push('-' + encryption.cipher + ' -passin file:' + passfile.name + ' -passout file:' + passfile.name);// + ' -passout pass:' + encryption.password + ' -' + encryption.cipher);
+                                        fs.writeFileSync(passfile.name, encryption.password);
+                                        var passout = tmp.fileSync();
+                                        fs.writeFileSync(passout.name, encryption.password);
+					//console.log(encryption);
+					cmd.push('-' + encryption.cipher + ' -passin file:' + passfile.name + ' -passout file:' + passout.name);// + ' -passout pass:' + encryption.password + ' -' + encryption.cipher);
 				}
 				//console.log(cmd);
 				
 				runOpenSSLCommand(cmd.join(' '), function(err, out) {
+					//console.log(out);
 					if(err) {
 						callback(err,{
 							command: out.command.replace(path, 'rsa.key'),
