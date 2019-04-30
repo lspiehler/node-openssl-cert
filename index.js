@@ -1417,15 +1417,19 @@ var openssl = function(options) {
 				let curves = Array();
 				//last line of output was blank on current version of openssl
 				for(let i = 0; i <= lines.length - 2; i++) {
-					let curve = {};
-					let line = lines[i].split(':');
-					curve['curve'] = line[0].trim(' ');
-					if(line.length >= 2) {
-						curve['description'] = line[1].trim(' ');
-					} else {
-						curve['description'] = lines[i + 1].trim(' ');
+					if(lines[i].indexOf(':') >= 0) {
+						let curve = {};
+						let line = lines[i].split(':');
+						curve['curve'] = line[0].trim(' ');
+						if(line[1].trim(' ')!='') {
+							curve['description'] = line[1].trim(' ');
+						} else {
+							console.log('here');
+							curve['description'] = lines[i + 1];
+							console.log(lines[i + 1].trim(' '));
+						}
+						curves.push(curve);
 					}
-					curves.push(curve);
 				}
 				callback(false, curves, [out.command]);
 			}
