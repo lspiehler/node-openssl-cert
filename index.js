@@ -1420,7 +1420,11 @@ var openssl = function(options) {
 					let curve = {};
 					let line = lines[i].split(':');
 					curve['curve'] = line[0].trim(' ');
-					curve['description'] = line[1].trim(' ');
+					if(line.length >= 2) {
+						curve['description'] = line[1].trim(' ');
+					} else {
+						curve['description'] = lines[i + 1].trim(' ');
+					}
 					curves.push(curve);
 				}
 				callback(false, curves, [out.command]);
