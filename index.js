@@ -1425,7 +1425,7 @@ var openssl = function(options) {
 							curve['description'] = line[1].trim(' ');
 						} else {
 							console.log('here');
-							curve['description'] = lines[i + 1];
+							curve['description'] = lines[i + 1].replace('\t','').replace('\r','');
 							console.log(lines[i + 1].trim(' '));
 						}
 						curves.push(curve);
