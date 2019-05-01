@@ -297,9 +297,9 @@ var openssl = function(options) {
 		}
 		for(var key in normalizesubject) {
 			if(normalizesubject[key].length==1) {
-				subject[key] = normalizesubject[key][0];
+				subject[key] = normalizesubject[key][0].replace(/\"/g, '');
 			} else {
-				subject[key] = normalizesubject[key];
+				subject[key] = normalizesubject[key].replace(/\"/g, '');
 			}
 		}
 		return subject;
