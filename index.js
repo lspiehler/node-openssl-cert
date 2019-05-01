@@ -1435,7 +1435,7 @@ var openssl = function(options) {
 	}
 	
 	this.generateECCPrivateKey = function(options, callback) {
-		let cmd = ['ecparam -name '+ options.curve +' -param_enc explicit -genkey -noout']
+		let cmd = ['ecparam -name '+ options.curve +' -param_enc named_curve -genkey -noout']
 		runOpenSSLCommand(cmd.join(' '), function(err, out) {
 			let firstcmd = out;
 			if(err) {
