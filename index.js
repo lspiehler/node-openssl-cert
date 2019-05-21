@@ -1,6 +1,7 @@
 'use strict';
 const { spawn } = require( 'child_process' );
 const https = require('https');
+const http = require('http');
 var tmp = require('tmp');
 var fs = require('fs');
 var opensslbinpath = 'openssl'; //use full path if not in system PATH
@@ -660,6 +661,114 @@ var openssl = function(options) {
 						}
 						cleanupCallback1();
 						cleanupCallback2();
+					});
+				});
+			});
+		});
+	}
+	
+	var convertDERtoPEM = function(cert, callback) {
+		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
+			if (err) throw err;
+			fs.writeFile(path, cert, function() {
+				var cmd = ['x509 -inform DER -outform PEM -in ' + path];
+				runOpenSSLCommand(cmd.join(' '), function(err, out) {
+					if(err) {
+						callback(true, false, out.command.replace(path, 'cert.pem'));
+					} else {
+						callback(false, out.stdout, out.command.replace(path, 'cert.pem'));
+					}
+					cleanupCallback1();
+				});
+			});
+		});
+	}
+	
+	this.convertDERtoPEM = function(cert, callback) {
+		convertDERtoPEM(cert, callback);
+	}
+	
+	this.downloadIssuer = function(uri, callback) {
+		http.get(uri, (resp) => {
+			let data = [];
+
+			// A chunk of data has been recieved.
+			resp.on('data', (chunk) => {
+				data.push(chunk);
+			});
+
+			// The whole response has been received. Print out the result.
+			resp.on('end', () => {
+				convertDERtoPEM(Buffer.concat(data), function(err, cert, cmd) {
+					callback(false, cert);
+				});
+			});
+
+		}).on("error", (err) => {
+			callback(true, false);
+		});
+	}
+	
+	this.getIssuerURI = function(cert, callback) {
+		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
+			if (err) throw err;
+			fs.writeFile(path, cert, function() {
+				var cmd = ['x509 -noout -in ' + path + ' -text'];
+				runOpenSSLCommand(cmd.join(' '), function(err, out) {
+					let uri = false;
+					if(err) {
+						callback(true, false, out.command.replace(path, 'cert.pem'));
+					} else {
+						let output = out.stdout.split('\r\n');
+						for(let i = 0; i <= output.length - 1; i++) {
+							if(output[i].indexOf('CA Issuers') >= 0) {
+								uri = output[i].split('URI:')[1];
+							}
+						}
+						callback(false, uri.replace('\r\n',''), out.command.replace(path, 'cert.pem'));
+					}
+					cleanupCallback1();
+				});
+			});
+		});
+	}
+	
+	this.getOCSPURI = function(cert, callback) {
+		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
+			if (err) throw err;
+			fs.writeFile(path, cert, function() {
+				var cmd = ['x509 -noout -in ' + path + ' -ocsp_uri'];
+				runOpenSSLCommand(cmd.join(' '), function(err, out) {
+					if(err) {
+						callback(true, false, out.command.replace(path, 'cert.pem'));
+					} else {
+						callback(false, out.stdout.replace('\r\n',''), out.command.replace(path, 'cert.pem'));
+					}
+					cleanupCallback1();
+				});
+			});
+		});
+	}
+	
+	this.queryOCSPServer = function(cacert, cert, uri, callback) {
+		//console.log(cert);
+		//console.log(cacert);
+		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
+			if (err) throw err;
+			fs.writeFile(path, cert, function() {
+				tmp.file(function _tempFileCreated(err, ca, fd, cleanupCallback2) {
+					if (err) throw err;
+					fs.writeFile(ca, cacert, function() {
+						var cmd = ['ocsp -issuer '+ ca +' -cert ' + path + ' -url ' + uri];
+						runOpenSSLCommand(cmd.join(' '), function(err, out) {
+							if(err) {
+								callback(true, out.stderr, out.command.replace(path, 'cert.pem').replace(ca, 'ca.pem'));
+							} else {
+								callback(false, out.stdout.replace(path,'Response'), out.command.replace(path, 'cert.pem').replace(ca, 'ca.pem'));
+							}
+							cleanupCallback1();
+							cleanupCallback2();
+						});
 					});
 				});
 			});
