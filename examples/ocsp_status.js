@@ -20,7 +20,7 @@ openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
 	openssl.getOCSPURI(cert[0], function(err, uri, cmd) {
 		//console.log(err);
 		//console.log(cmd);
-		//console.log(uri);
+		console.log(uri);
 		let leaf = cert[0];
 		let ca = cert.splice(1).join('\r\n');
 		openssl.queryOCSPServer(ca, leaf, uri, function(err, resp, cmd) {
