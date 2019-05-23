@@ -5,10 +5,10 @@ var options = {
 	binpath: 'C:/Program Files/OpenVPN/bin/openssl.exe'
 }
 
-var openssl = new node_openssl(options);
+var openssl = new node_openssl();
 
 var netcertoptions = {
-	hostname: 'notjustnetworks.com',
+	hostname: 'google.com',
 	port: 443,
 	starttls: false,
 	protocol: 'https'
@@ -25,6 +25,9 @@ openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
 		let ca = cert.splice(1).join('\r\n');
 		openssl.queryOCSPServer(ca, leaf, uri, function(err, resp, cmd) {
 			console.log(resp);
+			//console.log(cmd.ca);
+			//console.log(cmd.cert);
+			console.log(cmd.command);
 		});
 	});
 });

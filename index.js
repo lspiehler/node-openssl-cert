@@ -742,7 +742,7 @@ var openssl = function(options) {
 					if(err) {
 						callback(true, false, out.command.replace(path, 'cert.pem'));
 					} else {
-						callback(false, out.stdout.replace('\r\n',''), out.command.replace(path, 'cert.pem'));
+						callback(false, out.stdout.replace('\r\n','').replace('\n',''), out.command.replace(path, 'cert.pem'));
 					}
 					cleanupCallback1();
 				});
@@ -759,12 +759,20 @@ var openssl = function(options) {
 				tmp.file(function _tempFileCreated(err, ca, fd, cleanupCallback2) {
 					if (err) throw err;
 					fs.writeFile(ca, cacert, function() {
-						var cmd = ['ocsp -issuer '+ ca +' -cert ' + path + ' -header host=' + uri.split('/')[2] + ' -url ' + uri];
+						var cmd = ['ocsp -issuer '+ ca +' -cert ' + path + ' -header host=' + uri.split('/')[2] + ' -url ' + uri + ' -no_nonce'];
 						runOpenSSLCommand(cmd.join(' '), function(err, out) {
 							if(err) {
-								callback(true, out.stderr, out.command.replace(path, 'cert.pem').replace(ca, 'ca.pem'));
+								callback(true, out.stderr, {
+									command: out.command.replace(path, 'cert.pem').replace(ca, 'ca.pem'),
+                                                                        ca: cacert,
+                                                                        cert: cert
+                                                                });
 							} else {
-								callback(false, out.stdout.replace(path,'Response'), out.command.replace(path, 'cert.pem').replace(ca, 'ca.pem'));
+								callback(false, out.stdout.replace(path,'Response'), {
+									command: out.command.replace(path, 'cert.pem').replace(ca, 'ca.pem'),
+									ca: cacert,
+									cert: cert
+								});
 							}
 							cleanupCallback1();
 							cleanupCallback2();
