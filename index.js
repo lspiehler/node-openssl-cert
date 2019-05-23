@@ -722,10 +722,10 @@ var openssl = function(options) {
 						let output = out.stdout.split('\n');
 						for(let i = 0; i <= output.length - 1; i++) {
 							if(output[i].indexOf('CA Issuers') >= 0) {
-								uri = output[i].split('URI:')[1].replace('\r','');
+								uri = output[i].split('URI:')[1].replace('\r\n','').replace('\r','');
 							}
 						}
-						callback(false, uri.replace('\r\n',''), out.command.replace(path, 'cert.pem'));
+						callback(false, uri, out.command.replace(path, 'cert.pem'));
 					}
 					cleanupCallback1();
 				});
