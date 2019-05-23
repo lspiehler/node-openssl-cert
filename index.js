@@ -719,10 +719,10 @@ var openssl = function(options) {
 					if(err) {
 						callback(true, false, out.command.replace(path, 'cert.pem'));
 					} else {
-						let output = out.stdout.split('\r\n');
+						let output = out.stdout.split('\n');
 						for(let i = 0; i <= output.length - 1; i++) {
 							if(output[i].indexOf('CA Issuers') >= 0) {
-								uri = output[i].split('URI:')[1];
+								uri = output[i].split('URI:')[1].replace('\r','');
 							}
 						}
 						callback(false, uri.replace('\r\n',''), out.command.replace(path, 'cert.pem'));
@@ -740,7 +740,7 @@ var openssl = function(options) {
 				var cmd = ['x509 -noout -in ' + path + ' -ocsp_uri'];
 				runOpenSSLCommand(cmd.join(' '), function(err, out) {
 					if(err) {
-						callback(true, false, out.command.replace(path, 'cert.pem'));
+						callback(true, false, out.command.replace(path, 'cert.pem'), out.command.replace(path, 'cert.pem'));
 					} else {
 						callback(false, out.stdout.replace('\r\n','').replace('\n',''), out.command.replace(path, 'cert.pem'));
 					}
