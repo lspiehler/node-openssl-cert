@@ -8,7 +8,7 @@ var options = {
 var openssl = new node_openssl();
 
 var netcertoptions = {
-	hostname: 'aol.com',
+	hostname: 'google.com',
 	port: 443,
 	starttls: false,
 	protocol: 'https'
@@ -34,7 +34,7 @@ openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
 	});
 });
 
-fs.readFile('./google.crt', function(err, contents) {
+/*fs.readFile('./google.crt', function(err, contents) {
 	openssl.getIssuerURI(contents.toString(), function(err, uri, cmd) {
 		console.log(uri);
 		console.log(cmd);
@@ -46,7 +46,7 @@ fs.readFile('./google.crt', function(err, contents) {
 			}
 		});
 	});
-});
+});*/
 
 /*fs.readFile('./GTSGIAG3.cer', function(err, contents) {
 	openssl.convertDERtoPEM(contents, function(err, cert){
