@@ -769,16 +769,12 @@ var openssl = function(options) {
                                                                         cert: cert
                                                                 });
 							} else {
-								let output = out.stdout.replace(path + ': ','').split('\n');
+								//let output = out.stdout.replace(path + ': ','').split('\n');
 								//console.log(output);
-								let status = output[0].replace('\r','');
-								let thisupdate = new Date(output[1].split('pdate: ')[1]);
-								let nextupdate = new Date(output[2].split('pdate: ')[1]);
-								callback(false, {
-									'response': status,
-									'this update': thisupdate,
-									'next update': nextupdate},
-									{
+								//let status = output[0].replace('\r','');
+								//let thisupdate = new Date(output[1].split('pdate: ')[1]);
+								//let nextupdate = new Date(output[2].split('pdate: ')[1]);
+								callback(false, out.stdout.replace(path + ': ',''), {
 									command: out.command.replace(path, 'cert.pem').replace(ca, 'ca.pem'),
 									ca: cacert,
 									cert: cert
