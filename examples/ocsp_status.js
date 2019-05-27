@@ -8,7 +8,7 @@ var options = {
 var openssl = new node_openssl();
 
 var netcertoptions = {
-	hostname: 'google.com',
+	hostname: 'git.percle.org',
 	port: 443,
 	starttls: false,
 	protocol: 'https'
@@ -18,8 +18,8 @@ openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
 	if(err) console.log(err);
 	//console.log(cmd);
 	openssl.getOCSPURI(cert[0], function(err, uri, cmd) {
-		//console.log(err);
-		//console.log(cmd);
+		console.log(err);
+	//	console.log(cmd);
 		console.log(uri);
 		let leaf = cert[0];
 		let ca = cert.splice(1).join('\r\n');
@@ -32,9 +32,10 @@ openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
 	});
 });
 
-/*fs.readFile('./google.crt', function(err, contents) {
+/*fs.readFile('./ca.crt', function(err, contents) {
 	openssl.getIssuerURI(contents.toString(), function(err, uri, cmd) {
 		console.log(uri);
+		console.log(cmd);
 		openssl.downloadIssuer(uri, function(err, cert) {
 			if(err) {
 				console.log(err);

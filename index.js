@@ -739,10 +739,11 @@ var openssl = function(options) {
 			fs.writeFile(path, cert, function() {
 				var cmd = ['x509 -noout -in ' + path + ' -ocsp_uri'];
 				runOpenSSLCommand(cmd.join(' '), function(err, out) {
-					if(err) {
-						callback(true, false, out.command.replace(path, 'cert.pem'), out.command.replace(path, 'cert.pem'));
+					var uri = out.stdout.replace('\r\n','').replace('\n','')
+					if(err || uri == '') {
+						callback('Cannot get OCSP URI from certificate.', false, out.command.replace(path, 'cert.pem'), out.command.replace(path, 'cert.pem'));
 					} else {
-						callback(false, out.stdout.replace('\r\n','').replace('\n',''), out.command.replace(path, 'cert.pem'));
+						callback(false, uri, out.command.replace(path, 'cert.pem'));
 					}
 					cleanupCallback1();
 				});
