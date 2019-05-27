@@ -8,7 +8,7 @@ var options = {
 var openssl = new node_openssl();
 
 var netcertoptions = {
-	hostname: 'git.percle.org',
+	hostname: 'aol.com',
 	port: 443,
 	starttls: false,
 	protocol: 'https'
@@ -21,18 +21,20 @@ openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
 		console.log(err);
 	//	console.log(cmd);
 		console.log(uri);
+	//	console.log(cert);
+	//	process.exit();
 		let leaf = cert[0];
-		let ca = cert.splice(1).join('\r\n');
+		let ca = cert.splice(1).join('\n') + '\n';
 		openssl.queryOCSPServer(ca, leaf, uri, function(err, resp, cmd) {
 			console.log(resp);
 			//console.log(cmd.ca);
 			//console.log(cmd.cert);
-			console.log(cmd.command);
+			//console.log(cmd.command);
 		});
 	});
 });
 
-/*fs.readFile('./ca.crt', function(err, contents) {
+fs.readFile('./google.crt', function(err, contents) {
 	openssl.getIssuerURI(contents.toString(), function(err, uri, cmd) {
 		console.log(uri);
 		console.log(cmd);
@@ -44,7 +46,7 @@ openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
 			}
 		});
 	});
-});*/
+});
 
 /*fs.readFile('./GTSGIAG3.cer', function(err, contents) {
 	openssl.convertDERtoPEM(contents, function(err, cert){

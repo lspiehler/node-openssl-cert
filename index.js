@@ -763,7 +763,7 @@ var openssl = function(options) {
 						var cmd = ['ocsp -issuer '+ ca +' -cert ' + path + ' -header host=' + uri.split('/')[2] + ' -url ' + uri + ' -no_nonce'];
 						runOpenSSLCommand(cmd.join(' '), function(err, out) {
 							if(err) {
-								callback(true, out.stderr, {
+								callback(out.stderr, out.stderr, {
 									command: out.command.replace(path, 'cert.pem').replace(ca, 'ca.pem'),
                                                                         ca: cacert,
                                                                         cert: cert
