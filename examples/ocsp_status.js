@@ -8,25 +8,47 @@ var options = {
 var openssl = new node_openssl();
 
 var netcertoptions = {
-	hostname: 'google.com',
+	hostname: 'aol.com',
 	port: 443,
 	starttls: false,
 	protocol: 'https'
+}
+
+function parseOCSPResponse(resp) {
+	//console.log(resp);
+	var ocspresp = {}
+	let body = resp.split('OCSP Response Data:')[1].split('Signature Algorithm:')[0];
+	let splitbody = body.split('\n');
+	for(let i = 0; i <= splitbody.length - 1; i++) {
+		if(splitbody[i].indexOf(':') >= 0) {
+			let values = splitbody[i].split(':');
+			if(values.length == 2) {
+				ocspresp[values[0].trim(' ')] = values[1].trim(' ').replace('\r', '');
+			} else if(values.length >= 3) {
+				ocspresp[values[0].trim(' ')] = values.slice(1).join(':').trim(' ').replace('\r','');
+			} else {
+
+			}
+		}
+	}
+	return ocspresp;
+
 }
 
 openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
 	if(err) console.log(err);
 	//console.log(cmd);
 	openssl.getOCSPURI(cert[0], function(err, uri, cmd) {
-		console.log(err);
+		//console.log(err);
 	//	console.log(cmd);
-		console.log(uri);
+		//console.log(uri);
 	//	console.log(cert);
 	//	process.exit();
 		let leaf = cert[0];
 		let ca = cert.splice(1).join('\n') + '\n';
 		openssl.queryOCSPServer(ca, leaf, uri, function(err, resp, cmd) {
-			console.log(resp);
+			//console.log(resp);
+			console.log(parseOCSPResponse(resp));
 			//console.log(cmd.ca);
 			//console.log(cmd.cert);
 			//console.log(cmd.command);
