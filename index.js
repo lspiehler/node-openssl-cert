@@ -7,6 +7,7 @@ var fs = require('fs');
 var opensslbinpath = 'openssl'; //use full path if not in system PATH
 const tempdir = '/tmp/';
 var moment = require('moment');
+var net = require('net');
 
 var openssl = function(options) {
 	
@@ -371,6 +372,52 @@ var openssl = function(options) {
 		req.end();
 	}
 	
+	var tcpCheck = function(host, port, callback) {
+		let option = {
+			host: host,
+			port: port
+		}
+		
+		var client = net.createConnection(option, function () {
+			//console.log('Connection local address : ' + client.localAddress + ":" + client.localPort);
+			//console.log('Connection remote address : ' + client.remoteAddress + ":" + client.remotePort);
+		});
+		
+		client.setTimeout(3000);
+		client.setEncoding('utf8');
+		
+		client.on('timeout', function () {
+			//console.log('Client connection timeout. ');
+			client.destroy();
+			callback('Timed out connecting to host ' + host + ' on port ' + port, 'Timed out connecting to host ' + host + ' on port ' + port);
+		});
+		
+		client.on('connect', function () {
+			//console.log('Client connected. ');
+			client.end();
+		});
+		
+		client.on('error', function (e) {
+			//console.log('Client connection error: ' + e);
+			if(e.errno=='ENOTFOUND') {
+				callback('Failed to lookup domain name ' + host, 'Failed to lookup domain name ' + host)
+			} else {
+				callback('Failed connecting to host ' + host + ' on port ' + port, 'Failed connecting to host ' + host + ' on port ' + port);
+			}
+		});
+		
+		client.on('end', function () {
+			//console.log('Client connection timeout. ');
+			callback(false, 'Successfully established connection.')
+		});
+		
+		client.on('close', function () {
+			//console.log('Client connection closed. ');
+			//callback(false, 'Successfully established connection.')
+		});
+		
+	}
+	
 	this.getCertFromNetwork = function(options, callback) {
 		const begin = '-----BEGIN CERTIFICATE-----';
 		const end = '-----END CERTIFICATE-----';
@@ -389,38 +436,43 @@ var openssl = function(options) {
 			param = '';
 		}
 		command = 's_client -showcerts -connect ' + options.hostname + ':' + options.port + param;
-		runOpenSSLCommand(command, function(err, out) {
+		tcpCheck(options.hostname, options.port, function(err, result) {
 			if(err) {
-				callback(err, false, 'openssl ' + command);
+				callback(err, false, false);
 			} else {
-				var placeholder = out.stdout.indexOf(begin);
-				var certs = [];
-				var endoutput = false;
-				if(placeholder <= 0) {
-					endoutput = true;
-					callback('No certificate found in openssl command response', 'No certificate found in openssl command response', 'openssl ' + command);
-					return;
-				}
-				var shrinkout = out.stdout.substring(placeholder);
-				//console.log(shrinkout);
-				while(!endoutput) {
-					let endofcert = shrinkout.indexOf(end);
-					certs.push(shrinkout.substring(0, endofcert) + end);
-					shrinkout = shrinkout.substring(endofcert); 
-					
-					placeholder = shrinkout.indexOf(begin);
-					//console.log(placeholder);
-					if(placeholder <= 0) {
-						endoutput = true;
+				runOpenSSLCommand(command, function(err, out) {
+					if(err) {
+						callback(err, false, 'openssl ' + command);
 					} else {
-						shrinkout = shrinkout.substring(placeholder);
+						var placeholder = out.stdout.indexOf(begin);
+						var certs = [];
+						var endoutput = false;
+						if(placeholder <= 0) {
+							endoutput = true;
+							callback('No certificate found in openssl command response', 'No certificate found in openssl command response', 'openssl ' + command);
+							return;
+						}
+						var shrinkout = out.stdout.substring(placeholder);
+						//console.log(shrinkout);
+						while(!endoutput) {
+							let endofcert = shrinkout.indexOf(end);
+							certs.push(shrinkout.substring(0, endofcert) + end);
+							shrinkout = shrinkout.substring(endofcert); 
+							
+							placeholder = shrinkout.indexOf(begin);
+							//console.log(placeholder);
+							if(placeholder <= 0) {
+								endoutput = true;
+							} else {
+								shrinkout = shrinkout.substring(placeholder);
+							}
+						}
+						callback(false, certs, 'openssl ' + command);
+						return;
 					}
-				}
-				callback(false, certs, 'openssl ' + command);
-				return;
+				});
 			}
 		});
-		//console.log(options);
 	}
 	
 	var convertTime = function(line) {

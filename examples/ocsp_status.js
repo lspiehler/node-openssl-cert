@@ -5,10 +5,10 @@ var options = {
 	binpath: 'C:/Program Files/OpenVPN/bin/openssl.exe'
 }
 
-var openssl = new node_openssl();
+var openssl = new node_openssl(options);
 
 var netcertoptions = {
-	hostname: 'aol.com',
+	hostname: 'welcfdsdfome.com',
 	port: 443,
 	starttls: false,
 	protocol: 'https'
@@ -36,25 +36,36 @@ function parseOCSPResponse(resp) {
 }
 
 openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
-	if(err) console.log(err);
-	//console.log(cmd);
-	openssl.getOCSPURI(cert[0], function(err, uri, cmd) {
-		//console.log(err);
-	//	console.log(cmd);
-		//console.log(uri);
-	//	console.log(cert);
-	//	process.exit();
-		let leaf = cert[0];
-		let ca = cert.splice(1).join('\n') + '\n';
-		openssl.queryOCSPServer(ca, leaf, uri, function(err, resp, cmd) {
-			//console.log(resp);
-			console.log(parseOCSPResponse(resp));
-			//console.log(cmd.ca);
-			//console.log(cmd.cert);
-			//console.log(cmd.command);
+	if(err) {
+		console.log(err);
+	} else {
+		//console.log(cmd);
+		openssl.getOCSPURI(cert[0], function(err, uri, cmd) {
+			//console.log(err);
+		//	console.log(cmd);
+			//console.log(uri);
+		//	console.log(cert);
+		//	process.exit();
+			let leaf = cert[0];
+			let ca = cert.splice(1).join('\n') + '\n';
+			openssl.queryOCSPServer(ca, leaf, uri, function(err, resp, cmd) {
+				//console.log(resp);
+				console.log(parseOCSPResponse(resp));
+				//console.log(cmd.ca);
+				//console.log(cmd.cert);
+				//console.log(cmd.command);
+			});
 		});
-	});
+	}
 });
+
+/*openssl.tcpCheck('vfgdsdf.com', 443, function(err, result) {
+	if(err) {
+		console.log(err);
+	} else {
+		console.log(result);
+	}
+});*/
 
 /*fs.readFile('./google.crt', function(err, contents) {
 	openssl.getIssuerURI(contents.toString(), function(err, uri, cmd) {
