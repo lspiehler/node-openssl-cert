@@ -8,7 +8,7 @@ var options = {
 var openssl = new node_openssl(options);
 
 var netcertoptions = {
-	hostname: 'welcfdsdfome.com',
+	hostname: 'www.aol.com',
 	port: 443,
 	starttls: false,
 	protocol: 'https'

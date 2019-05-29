@@ -399,8 +399,11 @@ var openssl = function(options) {
 		
 		client.on('error', function (e) {
 			//console.log('Client connection error: ' + e);
-			if(e.errno=='ENOTFOUND') {
+			if(e.code=='ENOTFOUND') {
 				callback('Failed to lookup domain name ' + host, 'Failed to lookup domain name ' + host)
+			} else if(e.code=='ECONNRESET') {
+				//let openssl handle errors for resets
+				callback(false, 'Connection was reset.');
 			} else {
 				callback('Failed connecting to host ' + host + ' on port ' + port, 'Failed connecting to host ' + host + ' on port ' + port);
 			}
