@@ -827,7 +827,7 @@ var openssl = function(options) {
 				tmp.file(function _tempFileCreated(err, ca, fd, cleanupCallback2) {
 					if (err) throw err;
 					fs.writeFile(ca, cacert, function() {
-						var cmd = ['ocsp -issuer '+ ca +' -cert ' + path + ' -header host=' + uri.split('/')[2] + ' -url ' + uri + ' -text'];
+						var cmd = ['ocsp -issuer '+ ca +' -cert ' + path + ' -header host=' + uri.split('/')[2] + ' -url ' + uri + ' -text -CAfile ' + ca];
 						runOpenSSLCommand(cmd.join(' '), function(err, out) {
 							if(err) {
 								callback(out.stderr, out.stderr, {
@@ -847,7 +847,7 @@ var openssl = function(options) {
 									} else {
 										certinfo.base64 = cert;
 										callback(false, out.stdout.replace(path, 'cert.pem'), {
-											command: out.command.replace(path, 'cert.pem').replace(ca, 'ca.pem'),
+											command: out.command.replace(path, 'cert.pem').replace(ca, 'ca.pem').replace(ca, 'ca.pem'),
 											ca: cacert,
 											cert: certinfo,
 											uri: uri
