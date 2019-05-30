@@ -720,13 +720,14 @@ var openssl = function(options) {
 					runOpenSSLCommand(cmd.join(' '), function(err, out) {
 						if(err) {
 							callback(true, false, out.command.replace(path, 'cert.pem').replace(derpath, 'cert.cer'));
+							cleanupCallback2();
 						} else {
 							fs.readFile(derpath, function(err, data) {
 								callback(false, data, out.command.replace(path, 'cert.pem').replace(derpath, 'cert.cer'));
+								cleanupCallback2();
 							});
 						}
 						cleanupCallback1();
-						cleanupCallback2();
 					});
 				});
 			});

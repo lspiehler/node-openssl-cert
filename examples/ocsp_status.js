@@ -35,7 +35,7 @@ function parseOCSPResponse(resp) {
 
 }
 
-openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
+/*openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
 	if(err) {
 		console.log(err);
 	} else {
@@ -57,7 +57,7 @@ openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
 			});
 		});
 	}
-});
+});*/
 
 /*openssl.tcpCheck('vfgdsdf.com', 443, function(err, result) {
 	if(err) {
@@ -67,10 +67,10 @@ openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
 	}
 });*/
 
-/*fs.readFile('./google.crt', function(err, contents) {
+fs.readFile('./cert.cer', function(err, contents) {
 	openssl.getIssuerURI(contents.toString(), function(err, uri, cmd) {
 		console.log(uri);
-		console.log(cmd);
+		//console.log(cmd);
 		openssl.downloadIssuer(uri, function(err, cert) {
 			if(err) {
 				console.log(err);
@@ -79,7 +79,7 @@ openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
 			}
 		});
 	});
-});*/
+});
 
 /*fs.readFile('./GTSGIAG3.cer', function(err, contents) {
 	openssl.convertDERtoPEM(contents, function(err, cert){
