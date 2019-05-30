@@ -502,15 +502,22 @@ var openssl = function(options) {
 			} else if(attr=='Public-Key') {
 				outattrs[attr] = data[1].trim(' ').split(' ')[0].substring(1);
 			} else if(attr=='Not After') {
-				outattrs[attr] = convertTime(data);
+				let parse = data.splice(1);
+				var date = parse.join(':').replace('\r\n','').replace('\r','').trim(' ');
+				//outattrs[attr] = convertTime(date);
+				outattrs[attr] = new Date(date);
 			} else if(attr=='Not Before') {
-				outattrs[attr] = convertTime(data);
+				let parse = data.splice(1);
+				var date = parse.join(':').replace('\r\n','').replace('\r','').trim(' ');
+				//console.log(new Date(date));
+				//outattrs[attr] = convertTime(date);
+				outattrs[attr] = new Date(date);
 			}
 		}
 		return outattrs;
 	}
 	
-	this.getCertInfo = function(cert, callback) {
+	var getCertInfo = function(cert, callback) {
 		var cmd = [];
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 			if (err) throw err;
@@ -535,6 +542,10 @@ var openssl = function(options) {
 				});
 			});
 		});
+	}
+	
+	this.getCertInfo = function(cert, callback) {
+		getCertInfo(cert, callback);
 	}
 	
 	this.convertCertToCSR = function(cert, callback) {
@@ -829,11 +840,18 @@ var openssl = function(options) {
 								//let status = output[0].replace('\r','');
 								//let thisupdate = new Date(output[1].split('pdate: ')[1]);
 								//let nextupdate = new Date(output[2].split('pdate: ')[1]);
-								callback(false, out.stdout.replace(path, 'cert.pem'), {
-									command: out.command.replace(path, 'cert.pem').replace(ca, 'ca.pem'),
-									ca: cacert,
-									cert: cert,
-									uri: uri
+								getCertInfo(cert, function(err, certinfo, cmd) {
+									if(err) {
+										//error
+									} else {
+										certinfo.base64 = cert;
+										callback(false, out.stdout.replace(path, 'cert.pem'), {
+											command: out.command.replace(path, 'cert.pem').replace(ca, 'ca.pem'),
+											ca: cacert,
+											cert: certinfo,
+											uri: uri
+										});
+									}
 								});
 							}
 							cleanupCallback1();

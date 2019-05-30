@@ -25,9 +25,9 @@ function parseOCSPResponse(resp) {
 			if(values.length == 2) {
 				ocspresp[values[0].trim(' ')] = values[1].trim(' ').replace('\r', '');
 			} else if(values.length >= 3) {
-				ocspresp[values[0].trim(' ')] = values.slice(1).join(':').trim(' ').replace('\r','');
+				ocspresp[values[0].trim(' ')] = new Date(values.slice(1).join(':').trim(' ').replace('\r',''));
 			} else {
-
+				
 			}
 		}
 	}
@@ -47,10 +47,10 @@ openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
 		//	console.log(cert);
 		//	process.exit();
 			let leaf = cert[0];
-			let ca = cert.splice(1).join('\n') + '\n';
+			let ca = cert.splice(1).join('\r\n') + '\r\n';
 			openssl.queryOCSPServer(ca, leaf, uri, function(err, resp, cmd) {
-				//console.log(resp);
-				console.log(parseOCSPResponse(resp));
+				console.log(cmd);
+				//console.log(parseOCSPResponse(resp));
 				//console.log(cmd.ca);
 				//console.log(cmd.cert);
 				//console.log(cmd.command);
