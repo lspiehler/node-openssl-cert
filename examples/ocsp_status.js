@@ -49,8 +49,8 @@ function parseOCSPResponse(resp) {
 			let leaf = cert[0];
 			let ca = cert.splice(1).join('\r\n') + '\r\n';
 			openssl.queryOCSPServer(ca, leaf, uri, function(err, resp, cmd) {
-				console.log(cmd);
-				//console.log(parseOCSPResponse(resp));
+				//console.log(cmd);
+				console.log(parseOCSPResponse(resp));
 				//console.log(cmd.ca);
 				//console.log(cmd.cert);
 				//console.log(cmd.command);
@@ -67,18 +67,61 @@ function parseOCSPResponse(resp) {
 	}
 });*/
 
+var chain = [];
+var maxlength = 4
+
+var getChain = function(cert, callback) {
+	openssl.getIssuerURI(cert, function(err, uri, cmd) {
+		if(uri) {
+				//console.log(uri);
+				openssl.downloadIssuer(uri, function(err, ca) {
+					//console.log(ca);
+						if(err) {
+								callback('Failed to download CA.', false, false);
+						} else {
+								//console.log(chain.length);
+								if(chain.length <= maxlength) {
+										chain.push(ca);
+										getChain(ca, callback);
+								} else {
+										callback('Too many iterations getting certificate chain', false, false);
+								}
+						}
+				});
+				//callback(false, uri);
+		} else {
+				if(chain.length >= 1) {
+						callback(false, chain, false);
+				} else {
+						callback('Cannot get issuer from certificate', false, false);
+				}
+		}
+	});
+}
+
 fs.readFile('./cert.cer', function(err, contents) {
-	openssl.getIssuerURI(contents.toString(), function(err, uri, cmd) {
-		console.log(uri);
-		//console.log(cmd);
-		openssl.downloadIssuer(uri, function(err, cert) {
+	openssl.getOCSPURI(contents.toString(), function(err, uri, cmd) {
+			//console.log(uri);
 			if(err) {
-				console.log(err);
+				//console.log(uri);
+				callback('Failed to get OCSP URI from certificate.', false, false);
 			} else {
-				console.log(cert);
+				getChain(contents.toString(), function(err, chain) {
+					if(err) {
+						callback(err, false, false);
+					} else {
+						openssl.queryOCSPServer(chain, contents.toString(), uri, function(err, resp, cmd) {
+							if(err) {
+								console.log(resp);
+								callback(err, false, false);
+							} else {
+								console.log(resp);
+							}
+						});
+					}
+				});
 			}
 		});
-	});
 });
 
 /*fs.readFile('./GTSGIAG3.cer', function(err, contents) {

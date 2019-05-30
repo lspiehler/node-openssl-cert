@@ -297,11 +297,17 @@ var openssl = function(options) {
 				}
 			}
 		}
+		//console.log(normalizesubject);
 		for(var key in normalizesubject) {
+			//console.log(typeof(normalizesubject[key]));
 			if(normalizesubject[key].length==1) {
 				subject[key] = normalizesubject[key][0].replace(/\"/g, '');
 			} else {
-				subject[key] = normalizesubject[key].replace(/\"/g, '');
+				//subject[key] = normalizesubject[key].replace(/\"/g, '');
+				subject[key] = [];
+				for(let i = 0; i <= normalizesubject[key].length - 1; i++) {
+					subject[key].push(normalizesubject[key][i].replace(/\"/g, ''));
+				}
 			}
 		}
 		return subject;
