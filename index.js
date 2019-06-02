@@ -892,12 +892,12 @@ var openssl = function(options) {
 					//console.log(out);
 					if(err) {
 						callback(err,{
-							command: out.command.replace(path, 'rsa.key'),
+							command: out.command.replace(path, 'priv.key'),
 							data: out.stdout
 						});
 					} else {
 						callback(false,{
-							command: out.command.replace(path, 'rsa.key'),
+							command: out.command.replace(path, 'priv.key'),
 							data: out.stdout
 						});
 					}
@@ -928,12 +928,12 @@ var openssl = function(options) {
 				runOpenSSLCommand(cmd.join(' '), function(err, out) {
 					if(err) {
 						callback(err,{
-							command: out.command.replace(path, 'rsa.key'),
+							command: out.command.replace(path, 'priv.key'),
 							data: out.stdout
 						});
 					} else {
 						callback(false,{
-							command: out.command.replace(path, 'rsa.key'),
+							command: out.command.replace(path, 'priv.key'),
 							data: out.stdout
 						});
 					}
@@ -966,12 +966,12 @@ var openssl = function(options) {
 				runOpenSSLCommand(cmd.join(' '), function(err, out) {
 					if(err) {
 						callback(err,{
-							command: out.command.replace(path, 'rsa.key'),
+							command: out.command.replace(path, 'priv.key'),
 							data: out.stdout
 						});
 					} else {
 						callback(false,{
-							command: out.command.replace(path, 'rsa.key'),
+							command: out.command.replace(path, 'priv.key'),
 							data: out.stdout
 						});
 					}
@@ -1299,14 +1299,14 @@ var openssl = function(options) {
 				if(err) {
 					//console.log(out.command);
 					callback(err, out.stdout, {
-						command: [out.command.replace(keypath, 'rsa.key').replace(certpath, 'cert.crt').replace(pfxpath, 'cert.pfx').replace(capath, 'ca.crt') + ' -out cert.pfx']
+						command: [out.command.replace(keypath, 'priv.key').replace(certpath, 'cert.crt').replace(pfxpath, 'cert.pfx').replace(capath, 'ca.crt') + ' -out cert.pfx']
 					});
 					cleanupCallback1();
 				} else {
 					fs.readFile(pfxpath, function(err, data) {
 						//console.log(out.command);
 						callback(false, data, {
-							command: [out.command.replace(keypath, 'rsa.key').replace(certpath, 'cert.crt').replace(pfxpath, 'cert.pfx').replace(capath, 'ca.crt') + ' -out cert.pfx']
+							command: [out.command.replace(keypath, 'priv.key').replace(certpath, 'cert.crt').replace(pfxpath, 'cert.pfx').replace(capath, 'ca.crt') + ' -out cert.pfx']
 						});
 						cleanupCallback1();
 					});
@@ -1455,7 +1455,7 @@ var openssl = function(options) {
 													runOpenSSLCommand(cmd.join(' '), function(err, out) {
 														if(err) {
 															callback(err, out.stdout, {
-																command: [out.command.replace(keypath, 'rsa.key').replace(csrpath, 'cert.csr').replace(capath, 'ca.crt').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
+																command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'cert.csr').replace(capath, 'ca.crt').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
 																files: {
 																	config: req.join('\r\n')
 																}
@@ -1463,7 +1463,7 @@ var openssl = function(options) {
 														} else {
 															fs.readFile(path, function(err, serial) {
 																callback(false, out.stdout, {
-																	command: [out.command.replace(keypath, 'rsa.key').replace(csrpath, 'cert.csr').replace(capath, 'ca.crt').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
+																	command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'cert.csr').replace(capath, 'ca.crt').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
 																	serial: serial.toString(),
 																	files: {
 																		config: req.join('\r\n')
@@ -1527,14 +1527,14 @@ var openssl = function(options) {
 										runOpenSSLCommand(cmd.join(' '), function(err, out) {
 											if(err) {
 												callback(err, out.stdout, {
-													command: [out.command.replace(keypath, 'rsa.key').replace(csrpath, 'cert.csr').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
+													command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'cert.csr').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
 													files: {
 														config: req.join('\r\n')
 													}
 												});
 											} else {
 												callback(false, out.stdout, {
-													command: [out.command.replace(keypath, 'rsa.key').replace(csrpath, 'cert.csr').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
+													command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'cert.csr').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
 													files: {
 														config: req.join('\r\n')
 													}
@@ -1584,14 +1584,14 @@ var openssl = function(options) {
 								runOpenSSLCommand(cmd.join(' '), function(err, out) {
 									if(err) {
 										callback(err, out.stdout, {
-											command: [out.command.replace(keypath, 'rsa.key').replace(csrpath, 'csrconfig.txt') + ' -out cert.csr'],
+											command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'csrconfig.txt') + ' -out cert.csr'],
 											files: {
 												config: req.join('\r\n')
 											}
 										});
 									} else {
 										callback(false, out.stdout, {
-											command: [out.command.replace(keypath, 'rsa.key').replace(csrpath, 'csrconfig.txt') + ' -out cert.csr'],
+											command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'csrconfig.txt') + ' -out cert.csr'],
 											files: {
 												config: req.join('\r\n')
 											}
@@ -1657,10 +1657,10 @@ var openssl = function(options) {
 								cleanupCallback1();
 								if(options.format=="PKCS8") {
 									convertToPKCS8Encrypt(out.stdout, options.encryption.password, function(err, key) {
-										callback(false,key.data,[firstcmd.command, secondcmd.command.replace(path, 'ecc.key').replace('file:'+passoutfile.name,'pass:yourpassword'),out.command]);
+										callback(false,key.data,[firstcmd.command, secondcmd.command.replace(path, 'priv.key').replace('file:'+passoutfile.name,'pass:yourpassword'),out.command]);
 									});
 								} else {
-									callback(false, out.stdout, [firstcmd.command, out.command.replace(path, 'ecc.key').replace('file:'+passoutfile.name,'pass:yourpassword')]);
+									callback(false, out.stdout, [firstcmd.command, out.command.replace(path, 'priv.key').replace('file:'+passoutfile.name,'pass:yourpassword')]);
 								}
 							});
 						});
@@ -1671,7 +1671,7 @@ var openssl = function(options) {
 							callback(false,key.data,[out.command, key.command]);
 						});
 					} else {
-						callback(false, out.stdout, [out.command + ' -out ecc.key']);
+						callback(false, out.stdout, [out.command + ' -out priv.key']);
 					}
 				}
 			}
@@ -1725,7 +1725,7 @@ var openssl = function(options) {
 				if(option=='encryption' && options[option]) {
 					passfile.removeCallback();
 				}
-				callback(false, out.stdout, [out.command + ' -out rsa.key']);
+				callback(false, out.stdout, [out.command + ' -out priv.key']);
 			});
 		} else if (options.format == 'PKCS1' ) {
 			runOpenSSLCommand(cmd.join(' '), function(err, outkey) {
@@ -1739,7 +1739,7 @@ var openssl = function(options) {
 						if(err) {
 							callback(err, false);
 						} else {
-							callback(false, out.data, [ outkey.command + ' -out rsa.key', out.command + ' -out rsa.key' ]);
+							callback(false, out.data, [ outkey.command + ' -out priv.key', out.command + ' -out priv.key' ]);
 						}
 					});
 				}
