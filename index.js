@@ -1046,13 +1046,20 @@ var openssl = function(options) {
 			'organizationName',
 			'organizationalUnitName',
 			'commonName',
-			'emailAddress'
+			'emailAddress',
+			'jurisdictionOfIncorporationCountryName',
+			'jurisdictionOfIncorporationStateOrProvinceName',
+			'jurisdictionLocalityName',
+			'businessCategory',
+			'serialNumber'
 		];
 		const validsantypes = [
 			'DNS',
 			'IP',
 			'URI',
 			'email',
+			'RID',
+			'dirName',
 			'otherName'
 		];
 		var req = [];
