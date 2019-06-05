@@ -762,24 +762,45 @@ var openssl = function(options) {
 	}
 	
 	this.downloadIssuer = function(uri, callback) {
-		http.get(uri, (resp) => {
-			let data = [];
+		if(uri.indexOf('https://') >= 0) {
+			https.get(uri, (resp) => {
+				let data = [];
 
-			// A chunk of data has been recieved.
-			resp.on('data', (chunk) => {
-				data.push(chunk);
-			});
-
-			// The whole response has been received. Print out the result.
-			resp.on('end', () => {
-				convertDERtoPEM(Buffer.concat(data), function(err, cert, cmd) {
-					callback(false, cert);
+				// A chunk of data has been recieved.
+				resp.on('data', (chunk) => {
+					data.push(chunk);
 				});
-			});
 
-		}).on("error", (err) => {
-			callback(true, false);
-		});
+				// The whole response has been received. Print out the result.
+				resp.on('end', () => {
+					convertDERtoPEM(Buffer.concat(data), function(err, cert, cmd) {
+						callback(false, cert);
+					});
+				});
+
+			}).on("error", (err) => {
+				callback(true, false);
+			});
+		} else {
+			http.get(uri, (resp) => {
+				let data = [];
+
+				// A chunk of data has been recieved.
+				resp.on('data', (chunk) => {
+					data.push(chunk);
+				});
+
+				// The whole response has been received. Print out the result.
+				resp.on('end', () => {
+					convertDERtoPEM(Buffer.concat(data), function(err, cert, cmd) {
+						callback(false, cert);
+					});
+				});
+
+			}).on("error", (err) => {
+				callback(true, false);
+			});
+		}
 	}
 	
 	this.getIssuerURI = function(cert, callback) {
