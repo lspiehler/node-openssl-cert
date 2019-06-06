@@ -773,9 +773,13 @@ var openssl = function(options) {
 
 				// The whole response has been received. Print out the result.
 				resp.on('end', () => {
-					convertDERtoPEM(Buffer.concat(data), function(err, cert, cmd) {
-						callback(false, cert);
-					});
+					if(data.toString().indexOf('BEGIN CERTIFICATE') >= 0) {
+						callback(false, Buffer.concat(data).toString());
+					} else {
+						convertDERtoPEM(Buffer.concat(data), function(err, cert, cmd) {
+							callback(false, cert);
+						});
+					}
 				});
 
 			}).on("error", (err) => {
@@ -792,9 +796,13 @@ var openssl = function(options) {
 
 				// The whole response has been received. Print out the result.
 				resp.on('end', () => {
-					convertDERtoPEM(Buffer.concat(data), function(err, cert, cmd) {
-						callback(false, cert);
-					});
+					if(data.toString().indexOf('BEGIN CERTIFICATE') >= 0) {
+						callback(false, Buffer.concat(data).toString());
+					} else {
+						convertDERtoPEM(Buffer.concat(data), function(err, cert, cmd) {
+							callback(false, cert);
+						});
+					}
 				});
 
 			}).on("error", (err) => {
@@ -816,7 +824,11 @@ var openssl = function(options) {
 						let output = out.stdout.split('\n');
 						for(let i = 0; i <= output.length - 1; i++) {
 							if(output[i].indexOf('CA Issuers') >= 0) {
-								uri = output[i].split('URI:')[1].replace('\r\n','').replace('\r','');
+								let normalized = output[i].split('URI:')[1].replace('\r\n','').replace('\r','');
+								if(normalized.indexOf('http') >= 0) {
+									uri = normalized;
+									break;
+								}
 							}
 						}
 						callback(false, uri, out.command.replace(path, 'cert.pem'));
