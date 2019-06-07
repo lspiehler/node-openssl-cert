@@ -869,11 +869,27 @@ var openssl = function(options) {
 						var cmd = ['ocsp -issuer '+ ca +' -cert ' + path + ' -header host=' + uri.split('/')[2] + ' -url ' + uri + ' -text -CAfile ' + ca];
 						runOpenSSLCommand(cmd.join(' '), function(err, out) {
 							if(err) {
-								callback(out.stderr, out.stderr, {
+								getCertInfo(cert, function(err, certinfo, cmd) {
+									if(err) {
+										//error
+									} else {
+										certinfo.base64 = cert;
+										callback(out.stderr, out.stdout.replace(path, 'cert.pem'), {
+											command: out.command.replace(path, 'cert.pem').replace(ca, 'ca.pem').replace(ca, 'ca.pem'),
+											ca: cacert,
+											cert: certinfo,
+											uri: uri
+										});
+									}
+								});
+								
+								
+								
+								/*callback(out.stderr, out.stderr, {
 									command: out.command.replace(path, 'cert.pem').replace(ca, 'ca.pem'),
                                                                         ca: cacert,
                                                                         cert: cert
-                                                                });
+                                                                });*/
 							} else {
 								//let output = out.stdout.replace(path + ': ','').split('\n');
 								//console.log(output);
