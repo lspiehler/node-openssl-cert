@@ -1106,9 +1106,9 @@ var openssl = function(options) {
 		req.push('[ req ]');
 		req.push('default_md = ' + options.hash);
 		req.push('prompt = no');
-		//if(options.extensions) {
+		if(cert || options.extensions) {
 			req.push('req_extensions = req_ext');
-		//}
+		}
 		if(options.subject) {
 			req.push('distinguished_name = req_distinguished_name');
 			req.push('[ req_distinguished_name ]');
