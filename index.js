@@ -43,7 +43,7 @@ var openssl = function(options) {
 			}, 1000);*/
 			if(terminate) {
 				//if(data.toString().indexOf('Verify return code: 0 (ok)') >= 0 ) {
-				if(data.toString().indexOf('Verify return code: ') >= 0 ) {
+				if(stdoutbuff.join('').toString().indexOf('Verify return code: ') >= 0 ) {
 					openssl.kill();
 				}
 			}
