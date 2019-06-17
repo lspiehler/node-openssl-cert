@@ -1146,6 +1146,11 @@ var openssl = function(options) {
 			}
 		}
 		req.push('[ req_ext ]');
+		if(options.mustStaple) {
+			if(options.mustStaple==true) {
+				req.push('1.3.6.1.5.5.7.1.24 = DER:30:03:02:01:05');
+			}
+		}
 		if(cert) {
 			req.push('subjectKeyIdentifier = hash');
 			req.push('authorityKeyIdentifier = keyid:always,issuer');
