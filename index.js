@@ -156,7 +156,11 @@ var openssl = function(options) {
 			'Microsoft Individual Code Signing': 'msCodeInd',
 			'Microsoft Commercial Code Signing': 'msCodeCom',
 			'Microsoft Trust List Signing': 'msCTLSign',
-			'Microsoft Encrypted File System': 'msEFS'
+			'Microsoft Encrypted File System': 'msEFS',
+			'IPSec Internet Key Exchange': 'ipsecIKE',
+			'IP Security End System': 'ipsecEndSystem',
+			'IP Security Tunnel Termination': 'ipsecTunnel',
+			'IP Security User': 'ipsecUser'
 		}
 		var extendedkeyusages = eku.content[0].split(', ');
 		if(eku.critical) extendedkeyusage.critical = true;
@@ -1062,7 +1066,10 @@ var openssl = function(options) {
 			'msCodeCom',
 			'msCTLSign',
 			'msEFS',
-			'ipsecIKE'
+			'ipsecIKE',
+			'ipsecEndSystem',
+			'ipsecTunnel',
+			'ipsecUser'
 		]
 		
 		const validsubject = [

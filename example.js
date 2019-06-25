@@ -47,7 +47,11 @@ var csroptions = {
 			critical: true,
 			usages: [
 				'serverAuth',
-				'clientAuth'
+				'clientAuth',
+				'ipsecIKE',
+				'ipsecUser',
+				'ipsecTunnel',
+				'ipsecEndSystem'
 			]	
 		},
 		SANs: {
