@@ -520,6 +520,10 @@ var openssl = function(options) {
 				outattrs[attr] = new Date(date);
 			}
 		}
+		var lastline = attrs[attrs.length - 2];
+		if(lastline.indexOf('Fingerprint')) {
+			outattrs['Thumbprint'] = lastline.split('=')[1];
+		}
 		return outattrs;
 	}
 	
@@ -528,7 +532,7 @@ var openssl = function(options) {
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 			if (err) throw err;
 			fs.writeFile(path, cert, function() {
-				cmd.push('x509 -in ' + path + ' -text -noout');
+				cmd.push('x509 -in ' + path + ' -text -noout -fingerprint');
 				runOpenSSLCommand(cmd.join(), function(err, out) {
 					if(err) {
 						callback(true,out.stderr,cmd.join());
