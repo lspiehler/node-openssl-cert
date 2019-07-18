@@ -1,6 +1,11 @@
 const node_openssl = require('./index.js');
 var fs = require('fs');
-var openssl = new node_openssl();
+
+var options = {
+	binpath: 'C:/Program Files/OpenVPN/bin/openssl.exe'
+}
+
+var openssl = new node_openssl(options);
 
 var rsakeyoptions = {
 	encryption: {
@@ -42,7 +47,11 @@ var csroptions = {
 			critical: true,
 			usages: [
 				'serverAuth',
-				'clientAuth'
+				'clientAuth',
+				'ipsecIKE',
+				'ipsecUser',
+				'ipsecTunnel',
+				'ipsecEndSystem'
 			]	
 		},
 		SANs: {
@@ -53,21 +62,22 @@ var csroptions = {
 		}
 	},
 	subject: {
-                countryName: 'US',
-                stateOrProvinceName: 'Louisiana',
-                localityName: 'Slidell',
-                postalCode: '70458',
-                streetAddress: '1001 Gause Blvd.',
-                organizationName: 'SMH',
-                organizationalUnitName: [
-                        'IT'
-                ],
-                commonName: [
-                        'certificatetools.com',
-                        'www.certificatetools.com'
-                ],
-                emailAddress: 'lyas.spiehler@slidellmemorial.org'
-        }
+		countryName: 'US',
+		stateOrProvinceName: 'Louisiana',
+		localityName: 'Slidell',
+		postalCode: '70458',
+		streetAddress: '1001 Gause Blvd.',
+		organizationName: 'SMH',
+		organizationalUnitName: [
+				'IT'
+		],
+		commonName: [
+				'certificatetools.com',
+				'www.certificatetools.com'
+		],
+		emailAddress: 'lyas.spiehler@slidellmemorial.org'
+	},
+	mustStaple: false
 
 }
 
@@ -104,7 +114,7 @@ var netcertoptions = {
 	});
 });*/
 
-/*openssl.generateECCPrivateKey(ecckeyoptions, function(err, key, cmd) {
+openssl.generateECCPrivateKey(ecckeyoptions, function(err, key, cmd) {
 	console.log(cmd);
 	openssl.generateCSR(csroptions, key, 'test', function(err, csr, cmd) {
 			if(err) {
@@ -128,7 +138,7 @@ var netcertoptions = {
 			}
 
 	});
-});*/
+});
 
 /*openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
 	console.log(cert);
@@ -182,7 +192,7 @@ var netcertoptions = {
 	});
 });*/
 
-fs.readFile('./test/ecc.key', function(err, contents) {
+/*fs.readFile('./test/ecc.key', function(err, contents) {
     openssl.importECCPrivateKey(contents, 'test test', function(err, key, cmd) {
 	//console.log(cmd);
 		if(err) {
@@ -200,7 +210,7 @@ fs.readFile('./test/ecc.key', function(err, contents) {
 				
 		});
 	});
-});
+});*/
 
 /*openssl.getCertFromURL('yahoo.com',function(err, cert) {
 	if(err) console.log(err);
