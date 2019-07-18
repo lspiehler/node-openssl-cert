@@ -526,7 +526,7 @@ var openssl = function(options) {
 		}
 		var lastline = attrs[attrs.length - 2];
 		if(lastline.indexOf('Fingerprint')) {
-			outattrs['Thumbprint'] = lastline.split('=')[1];
+			outattrs['Thumbprint'] = lastline.split('=')[1].replace('\r\n','').replace('\r','').trim(' ');
 		}
 		return outattrs;
 	}
