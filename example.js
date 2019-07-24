@@ -31,6 +31,7 @@ var csroptions = {
 	hash: 'sha512',
 	days: 240,
 	extensions: {
+		tlsfeature: ['status_request'],
 		basicConstraints: {
 			critical: true,
 			CA: true,
@@ -76,8 +77,7 @@ var csroptions = {
 				'www.certificatetools.com'
 		],
 		emailAddress: 'lyas.spiehler@slidellmemorial.org'
-	},
-	mustStaple: false
+	}
 
 }
 

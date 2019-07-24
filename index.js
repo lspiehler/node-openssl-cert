@@ -320,16 +320,22 @@ var openssl = function(options) {
 	var getx509v3Attributes = function(certificate) {
 		var extensions = {}
 		var parsedextensions = {};
-		//console.log(certificate);
+		console.log(certificate);
 		var x509v3 = certificate.split('\n');
 		for(var i = 0; i <= x509v3.length - 1; i++) {
-			if(x509v3[i].indexOf('X509v3') >= 0 || x509v3[i].indexOf('CT Precertificate SCTs') >= 0 || x509v3[i].indexOf('Authority Information Access') >= 0 ) {
+			if(x509v3[i].indexOf('X509v3') >= 0 || x509v3[i].indexOf('CT Precertificate SCTs') >= 0 || x509v3[i].indexOf('Authority Information Access') >= 0 || x509v3[i].indexOf('TLS Feature') >= 0 ) {
 				var ext = x509v3[i].split(':');
 				var extname = ext[0].replace('X509v3','').trim();
+				//console.log(extname);
 				var critical = false;
-				if(ext[1]==' critical') critical = true; 
+				if(ext[1].replace('\r\n').replace('\n').trim()=='critical') {
+					critical = true;
+					//console.log('critical');
+					parsedextensions[extname] = { "critical": critical, "content": []};
+				} else {
+					parsedextensions[extname] = { "content": []};
+				}
 				//console.log(i + ' - ' + extname + ' - ' + critical);
-				parsedextensions[extname] = { "critical": critical, "content": []};
 			} else {
 				if(parsedextensions[extname]) {
 					parsedextensions[extname].content.push(x509v3[i].trim());
@@ -345,9 +351,24 @@ var openssl = function(options) {
 				extensions['extendedKeyUsage'] = getExtendedKeyUsage(parsedextensions[key]);
 			} else if(key=='Basic Constraints') {
 				extensions['basicConstraints'] = getBasicConstraints(parsedextensions[key]);
+			} else if(key=='TLS Feature') {
+				extensions['tlsfeature'] = getTLSFeature(parsedextensions[key]);
+				//console.log(parsedextensions[key]);
 			}
 		}
 		return extensions;
+	}
+	
+	var getTLSFeature = function(feature) {
+		var tlsfeature = []
+		var index = {
+			'status_request': 'status_request',
+		}
+		var tlsfeatures = feature.content[0].split(', ');
+		for(var i = 0; i <= tlsfeatures.length - 1; i++) {
+			tlsfeature.push(index[tlsfeatures[i]]);
+		}
+		return tlsfeature;
 	}
 	
 	this.getCertFromURL = function(url, callback) {
@@ -1058,6 +1079,10 @@ var openssl = function(options) {
 			'encipherOnly',
 			'decipherOnly'
 		]
+		
+		const validtlsfeature = [
+			'status_request'
+		]
 
 		const validextkeyusage = [
 			'serverAuth',
@@ -1157,11 +1182,11 @@ var openssl = function(options) {
 			}
 		}
 		req.push('[ req_ext ]');
-		if(options.mustStaple) {
+		/*if(options.mustStaple) {
 			if(options.mustStaple==true) {
 				req.push('1.3.6.1.5.5.7.1.24 = DER:30:03:02:01:05');
 			}
-		}
+		}*/
 		if(cert) {
 			req.push('subjectKeyIdentifier = hash');
 			req.push('authorityKeyIdentifier = keyid:always,issuer');
@@ -1214,6 +1239,22 @@ var openssl = function(options) {
 					if(valid > 0) {
 						if(options.extensions[ext].critical) critical = 'critical,';
 						req.push(ext + '=' + critical + options.extensions[ext].usages.join(','));
+					}
+				} else if (ext == 'tlsfeature') {
+					var critical = '';
+					var valid = 0;
+					for(var i = 0; i <= options.extensions[ext].length - 1; i++) {
+						//console.log(options.extensions[ext]);
+						if(validtlsfeature.indexOf(options.extensions[ext][i]) < 0) {
+							callback('Invalid ' + ext + ': ' + options.extensions[ext][i], false);
+							return false;
+						} else {
+							valid++;
+						}
+					}
+					if(valid > 0) {
+						//if(options.extensions[ext].critical) critical = 'critical,';
+						req.push(ext + '=' + options.extensions[ext].join(','));
 					}
 				} else if (ext == 'basicConstraints') {
 					var bccmd = [];
