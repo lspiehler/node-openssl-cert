@@ -320,7 +320,7 @@ var openssl = function(options) {
 	var getx509v3Attributes = function(certificate) {
 		var extensions = {}
 		var parsedextensions = {};
-		console.log(certificate);
+		//console.log(certificate);
 		var x509v3 = certificate.split('\n');
 		for(var i = 0; i <= x509v3.length - 1; i++) {
 			if(x509v3[i].indexOf('X509v3') >= 0 || x509v3[i].indexOf('CT Precertificate SCTs') >= 0 || x509v3[i].indexOf('Authority Information Access') >= 0 || x509v3[i].indexOf('TLS Feature') >= 0 ) {
