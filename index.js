@@ -1515,7 +1515,7 @@ var openssl = function(options) {
 											fs.readFile(persistcapath + '/serial.txt', function(err, serial) {
 												callback(false, out.stdout, {
 													command: [out.command.replace(config, 'config.txt').replace(csrpath, 'cert.csr')],
-													serial: serial.toString(),
+													serial: serial.toString().replace('\r\n', '').replace('\n', ''),
 													files: {
 														config: req.join('\r\n')
 													}
@@ -1555,45 +1555,51 @@ var openssl = function(options) {
 											tmp.file(function _tempFileCreated(err, csrconfig, fd, cleanupCallback4) {
 												if (err) throw err;
 												fs.writeFile(csrconfig, req.join('\r\n'), function() {
-													var path = tmp.tmpNameSync();
-													var cmd = ['x509 -req -in ' + csrpath + ' -days ' + options.days + ' -CA ' + capath + ' -CAkey ' + keypath + ' -extfile ' + csrconfig + ' -extensions req_ext -CAserial ' + path + ' -CAcreateserial'];
-													if(password) {
-														var passfile = tmp.fileSync();
-														fs.writeFileSync(passfile.name, password);
-														cmd.push('-passin file:' + passfile.name);
-													}
-											
-											//console.log(cmd);
-											
-													runOpenSSLCommand(cmd.join(' '), function(err, out) {
-														if(err) {
-															callback(err, out.stdout, {
-																command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'cert.csr').replace(capath, 'ca.crt').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
-																files: {
-																	config: req.join('\r\n')
+													tmp.tmpName(function _tempNameGenerated(err, serialpath) {
+														if (err) throw err;
+														//fs.writeFile(serialpath, req.join('\r\n'), function() {
+															var cmd = ['x509 -req -in ' + csrpath + ' -days ' + options.days + ' -CA ' + capath + ' -CAkey ' + keypath + ' -extfile ' + csrconfig + ' -extensions req_ext -CAserial ' + serialpath + ' -CAcreateserial'];
+															//var cmd = ['x509 -req -in ' + csrpath + ' -days ' + options.days + ' -CA ' + capath + ' -CAkey ' + keypath + ' -extfile ' + csrconfig + ' -extensions req_ext'];
+															if(password) {
+																var passfile = tmp.fileSync();
+																fs.writeFileSync(passfile.name, password);
+																cmd.push('-passin file:' + passfile.name);
+															}
+													
+													//console.log(cmd);
+													
+															runOpenSSLCommand(cmd.join(' '), function(err, out) {
+																if(err) {
+																	callback(err, out.stdout, {
+																		command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'cert.csr').replace(capath, 'ca.crt').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
+																		files: {
+																			config: req.join('\r\n')
+																		}
+																	});
+																} else {
+																	fs.readFile(serialpath, function(err, serial) {
+																		callback(false, out.stdout, {
+																			command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'cert.csr').replace(capath, 'ca.crt').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
+																			serial: serial.toString().replace('\r\n', '').replace('\n', ''),
+																			files: {
+																				config: req.join('\r\n')
+																			}
+																		});
+																	});
 																}
-															});
-														} else {
-															fs.readFile(path, function(err, serial) {
-																callback(false, out.stdout, {
-																	command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'cert.csr').replace(capath, 'ca.crt').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
-																	serial: serial.toString(),
-																	files: {
-																		config: req.join('\r\n')
-																	}
+																fs.unlink(serialpath, function(err) {
+																	//delete temp serial file
 																});
-															});
-														}
-														fs.unlink(path, function(err) {
-															//delete temp serial file
+																if(password) {
+																	passfile.removeCallback();
+																}
+																cleanupCallback1();
+																cleanupCallback2();
+																cleanupCallback3();
+																cleanupCallback4();
+																//cleanupCallback5();
+															//});
 														});
-														if(password) {
-															passfile.removeCallback();
-														}
-														cleanupCallback1();
-														cleanupCallback2();
-														cleanupCallback3();
-														cleanupCallback4();
 													});
 												});
 											});
