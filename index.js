@@ -530,8 +530,8 @@ var openssl = function(options) {
 				outattrs[attr] = data[1].trim(' ');
 			} else if(attr=='Serial Number') {
 				outattrs[attr] = attrs[i+1].trim(' ');
-			} else if(attr=='Public-Key') {
-				outattrs[attr] = data[1].trim(' ').split(' ')[0].substring(1);
+			} else if(attr.indexOf('Public-Key') >= 0) {
+				outattrs['Public-Key'] = data[1].trim(' ').split(' ')[0].substring(1);
 			} else if(attr=='Not After') {
 				let parse = data.splice(1);
 				var date = parse.join(':').replace('\r\n','').replace('\r','').trim(' ');
@@ -559,6 +559,7 @@ var openssl = function(options) {
 			fs.writeFile(path, cert, function() {
 				cmd.push('x509 -in ' + path + ' -text -noout -fingerprint');
 				runOpenSSLCommand(cmd.join(), function(err, out) {
+					//console.log(out);
 					if(err) {
 						callback(true,out.stderr,cmd.join());
 					} else {
