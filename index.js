@@ -629,7 +629,7 @@ var openssl = function(options) {
 							if(err) {
 								callback(true,out.stderr,cmd.join());
 							} else {
-								console.log(out.stdout);
+								//console.log(out.stdout);
 								let lines = out.stdout.split('\n');
 								let ocspparams = {};
 								for(let i = 0; i <= lines.length - 1; i++) {
