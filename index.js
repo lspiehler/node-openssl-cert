@@ -609,6 +609,67 @@ var openssl = function(options) {
 		});
 	}
 	
+	this.getOCSPHashes = function(ca, cert, hashalg, callback) {
+		let hashes = ['sha1', 'sha256', 'sha384', 'sha512'];
+		//console.log(hashes.includes(hashalg))
+		if(hashes.includes(hashalg)) {
+			//ok
+		} else {
+			callback('invalid hash specified',false, false);
+		}
+		var cmd = [];
+		tmp.file(function _tempFileCreated(err, certpath, fd, cleanupCallback1) {
+			if (err) throw err;
+			fs.writeFile(certpath, cert, function() {
+				tmp.file(function _tempFileCreated(err, capath, fd, cleanupCallback2) {
+					if (err) throw err;
+					fs.writeFile(capath, ca, function() {
+						cmd.push('ocsp -issuer ' + capath + ' -' + hashalg + ' -cert ' + certpath + ' -req_text');
+						runOpenSSLCommand(cmd.join(), function(err, out) {
+							if(err) {
+								callback(true,out.stderr,cmd.join());
+							} else {
+								console.log(out.stdout);
+								let lines = out.stdout.split('\n');
+								let ocspparams = {};
+								for(let i = 0; i <= lines.length - 1; i++) {
+									let line = lines[i].split(': ')
+									//console.log(line[0])
+									if(line[0].trim(' ') == 'Hash Algorithm') {
+										ocspparams[line[0].trim(' ')] = line[1].replace('\r','');
+									} else if(line[0].trim(' ') == 'Issuer Name Hash') {
+										if(line[1].indexOf('\\') >= 1) {
+											ocspparams[line[0].trim(' ')] = line[1].replace('\\','').replace('\r','') + lines[i + 1].replace('\r','');
+										} else {
+											ocspparams[line[0].trim(' ')] = line[1].replace('\r','');
+										}
+									} else if(line[0].trim(' ') == 'Issuer Key Hash') {
+										if(line[1].indexOf('\\') >= 1) {
+											ocspparams[line[0].trim(' ')] = line[1].replace('\\','').replace('\r','') + lines[i + 1].replace('\r','');
+										} else {
+											ocspparams[line[0].trim(' ')] = line[1].replace('\r','');
+										}
+									} else if(line[0].trim(' ') == 'Serial Number') {
+										if(line[1].indexOf('\\') >= 1) {
+											ocspparams[line[0].trim(' ')] = line[1].replace('\\','').replace('\r','') + lines[i + 1].replace('\r','');
+										} else {
+											ocspparams[line[0].trim(' ')] = line[1].replace('\r','');
+										}
+									} else {
+										
+									}
+								}
+								callback(false, ocspparams, 'openssl ' + cmd.join().replace(certpath, 'cert.crt').replace(capath, 'ca.crt'));
+							}
+							cleanupCallback1();
+							cleanupCallback2();
+						});
+					});
+				});
+			});
+		});
+	}
+	
 	var importRSAPrivateKey = function(key, password, callback) {
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 			if (err) throw err;
