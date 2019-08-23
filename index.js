@@ -242,6 +242,34 @@ var openssl = function(options) {
 		return trimmed;
 	}
 	
+	this.getDistinguishedName = function(subjectobj) {
+		var index = {
+			'countryName': 'C',
+			'stateOrProvinceName': 'ST',
+			'localityName': 'L',
+			'postalCode': 'postalCode',
+			'streetAddress': 'street',
+			'organizationName': 'O',
+			'organizationalUnitName': 'OU',
+			'commonName': 'CN',
+			'emailAddress': 'emailAddress'
+		}
+		
+		let dn = [];
+		
+		var keys = Object.keys(subjectobj);
+		for(let i = 0; i <= keys.length - 1; i++) {
+			if(typeof(subjectobj[keys[i]])=='string') {
+				dn.push('/' + index[keys[i]] + '=' + subjectobj[keys[i]])
+			} else {
+				for(let j = 0; j <= subjectobj[keys[i]].length - 1; j++) {
+					dn.push('/' + index[keys[i]] + '=' + subjectobj[keys[i]][j]);
+				}
+			}
+		}	
+		return dn.join('');
+	}
+	
 	var getSubject = function(certificate) {
 		var normalizesubject = {};
 		var subject = {};
