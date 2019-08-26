@@ -976,7 +976,7 @@ var openssl = function(options) {
 		});
 	}
 	
-	this.queryOCSPServer = function(cacert, cert, uri, callback) {
+	this.queryOCSPServer = function(cacert, cert, uri, nonce, callback) {
 		//console.log(cert);
 		//console.log(cacert);
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
@@ -986,7 +986,11 @@ var openssl = function(options) {
 					if (err) throw err;
 					fs.writeFile(ca, cacert, function() {
 						var cmd = ['ocsp -issuer '+ ca +' -cert ' + path + ' -header host=' + uri.split('/')[2] + ' -url ' + uri + ' -text -CAfile ' + ca];
+						if(!nonce) {
+							cmd.push('-no_nonce');
+						}
 						runOpenSSLCommand(cmd.join(' '), function(err, out) {
+							//console.log(cmd);
 							if(err) {
 								getCertInfo(cert, function(err, certinfo, cmd) {
 									if(err) {
