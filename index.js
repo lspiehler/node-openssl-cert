@@ -1156,6 +1156,10 @@ var openssl = function(options) {
 		});
 	}
 	
+	this.generateConfig = function(options, cert, persistentca, callback) {
+		generateConfig(options, cert, persistentca, callback);
+	}
+	
 	var generateConfig = function(options, cert, persistentca, callback) {
 		options.hash = typeof options.hash !== 'undefined' ? options.hash : 'sha256';
 		const validopts = [
