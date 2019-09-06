@@ -608,6 +608,25 @@ var openssl = function(options) {
 		});
 	}
 	
+	this.getOpenSSLCertInfo = function(cert, callback) {
+		var cmd = [];
+		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
+			if (err) throw err;
+			fs.writeFile(path, cert, function() {
+				cmd.push('x509 -in ' + path + ' -text -noout -fingerprint');
+				runOpenSSLCommand(cmd.join(), function(err, out) {
+					//console.log(out);
+					if(err) {
+						callback(true,out.stderr,cmd.join());
+					} else {
+						callback(false,out.stdout,'openssl ' + cmd.join().replace(path, 'cert.crt'));
+					}
+					cleanupCallback1();
+				});
+			});
+		});
+	}
+	
 	this.getCertInfo = function(cert, callback) {
 		getCertInfo(cert, callback);
 	}
