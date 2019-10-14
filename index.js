@@ -589,7 +589,7 @@ var openssl = function(options) {
 				runOpenSSLCommand(cmd.join(), function(err, out) {
 					//console.log(out);
 					if(err) {
-						callback(true,out.stderr,cmd.join());
+						callback(out.stderr, false, cmd.join());
 					} else {
 						var extensions = getx509v3Attributes(out.stdout);
 						var subject = getSubject(out.stdout);
@@ -617,7 +617,7 @@ var openssl = function(options) {
 				runOpenSSLCommand(cmd.join(), function(err, out) {
 					//console.log(out);
 					if(err) {
-						callback(true,out.stderr,cmd.join());
+						callback(out.stderr,false,cmd.join());
 					} else {
 						var extensions = getx509v3Attributes(out.stdout);
 						var subject = getSubject(out.stdout);
