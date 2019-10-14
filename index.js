@@ -574,7 +574,7 @@ var openssl = function(options) {
 			}
 		}
 		var lastline = attrs[attrs.length - 2];
-		if(lastline.indexOf('Fingerprint')) {
+		if(lastline.indexOf('Fingerprint') >= 0) {
 			outattrs['Thumbprint'] = lastline.split('=')[1].replace('\r\n','').replace('\r','').trim(' ');
 		}
 		return outattrs;
@@ -606,6 +606,38 @@ var openssl = function(options) {
 				});
 			});
 		});
+	}
+	
+	var getCSRInfo = function(cert, callback) {
+		var cmd = [];
+		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
+			if (err) throw err;
+			fs.writeFile(path, cert, function() {
+				cmd.push('req -in ' + path + ' -text -noout');
+				runOpenSSLCommand(cmd.join(), function(err, out) {
+					//console.log(out);
+					if(err) {
+						callback(true,out.stderr,cmd.join());
+					} else {
+						var extensions = getx509v3Attributes(out.stdout);
+						var subject = getSubject(out.stdout);
+						var attrs = getCertAttributes(out.stdout);
+						var csroptions = {
+							extensions: extensions,
+							subject: subject,
+							attributes: attrs
+						}
+						//callback(false,out.stdout,cmd.join());
+						callback(false,csroptions,'openssl ' + cmd.join().replace(path, 'cert.crt'));
+					}
+					cleanupCallback1();
+				});
+			});
+		});
+	}
+	
+	this.getCSRInfo = function(cert, callback) {
+		getCSRInfo(cert, callback);
 	}
 	
 	this.getOpenSSLCertInfo = function(cert, callback) {
