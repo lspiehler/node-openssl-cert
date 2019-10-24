@@ -1727,6 +1727,11 @@ var openssl = function(options) {
 																	});
 																} else {
 																	fs.readFile(serialpath, function(err, serial) {
+																		
+																		fs.unlink(serialpath, function(err) {
+																			//delete temp serial file
+																		});
+																		
 																		callback(false, out.stdout, {
 																			command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'cert.csr').replace(capath, 'ca.crt').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
 																			serial: serial.toString().replace('\r\n', '').replace('\n', ''),
@@ -1736,9 +1741,6 @@ var openssl = function(options) {
 																		});
 																	});
 																}
-																fs.unlink(serialpath, function(err) {
-																	//delete temp serial file
-																});
 																if(password) {
 																	passfile.removeCallback();
 																}
