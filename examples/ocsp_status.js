@@ -48,12 +48,16 @@ openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
 		//	process.exit();
 			let leaf = cert[0];
 			let ca = cert.splice(1).join('\r\n') + '\r\n';
-			openssl.queryOCSPServer(ca, leaf, uri, function(err, resp, cmd) {
-				//console.log(cmd);
-				console.log(parseOCSPResponse(resp));
-				//console.log(cmd.ca);
-				//console.log(cmd.cert);
-				//console.log(cmd.command);
+			openssl.queryOCSPServer(ca, leaf, uri, 'sha1', true, function(err, resp, cmd) {
+				if(err) {
+					console.log(err);
+				} else {
+					//console.log(cmd);
+					console.log(parseOCSPResponse(resp));
+					//console.log(cmd.ca);
+					//console.log(cmd.cert);
+					//console.log(cmd.command);
+				}
 			});
 		});
 	}

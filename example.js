@@ -81,6 +81,14 @@ var csroptions = {
 
 }
 
+var csroptions = {
+	hash: 'sha256',
+	subject: {
+		countryName: 'US'
+	}
+
+}
+
 var netcertoptions = {
 	hostname: 'barracuda1.smhplus.org',
 	port: 25,
@@ -94,6 +102,10 @@ var netcertoptions = {
 	starttls: false,
 	//protocol: 'https'
 }
+
+openssl.generateConfig(csroptions, true, false, function(err, config) {
+	console.log(config);
+});
 
 /*var netcertoptions = {
 	hostname: 'barracuda1.smhplus.org',
@@ -114,7 +126,7 @@ var netcertoptions = {
 	});
 });*/
 
-openssl.generateECCPrivateKey(ecckeyoptions, function(err, key, cmd) {
+/*openssl.generateECCPrivateKey(ecckeyoptions, function(err, key, cmd) {
 	console.log(cmd);
 	openssl.generateCSR(csroptions, key, 'test', function(err, csr, cmd) {
 			if(err) {
@@ -138,7 +150,7 @@ openssl.generateECCPrivateKey(ecckeyoptions, function(err, key, cmd) {
 			}
 
 	});
-});
+});*/
 
 /*openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
 	console.log(cert);

@@ -8,13 +8,12 @@ var options = {
 
 var openssl = new node_openssl(options);
 
-fs.readFile('./godaddy.cer', function(err, contents) {
-	openssl.getCertInfo(contents, function(err, attrs, cmd) {
+fs.readFile('./twitter2.crt', function(err, contents) {
+	openssl.getOpenSSLCertInfo(contents, function(err, out, cmd) {
 		if(err) {
 			console.log(err);
 		} else {
-			console.log(attrs);
-			console.log(openssl.getDistinguishedName(attrs.subject));
+			console.log(out);
 		}
 	});
 });

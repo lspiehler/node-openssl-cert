@@ -252,7 +252,12 @@ var openssl = function(options) {
 			'organizationName': 'O',
 			'organizationalUnitName': 'OU',
 			'commonName': 'CN',
-			'emailAddress': 'emailAddress'
+			'emailAddress': 'emailAddress',
+			'jurisdictionLocalityName': 'jurisdictionL',
+			'jurisdictionStateOrProvinceName': 'jurisdictionST',
+			'jurisdictionCountryName': 'jurisdictionC',
+			'serialNumber': 'serialNumber',
+			'businessCategory': 'businessCategory'
 		}
 		
 		let dn = [];
@@ -282,7 +287,12 @@ var openssl = function(options) {
 			'O': 'organizationName',
 			'OU': 'organizationalUnitName',
 			'CN': 'commonName',
-			'emailAddress': 'emailAddress'
+			'emailAddress': 'emailAddress',
+			'jurisdictionL': 'jurisdictionLocalityName',
+			'jurisdictionST': 'jurisdictionStateOrProvinceName',
+			'jurisdictionC': 'jurisdictionCountryName',
+			'serialNumber': 'serialNumber',
+			'businessCategory': 'businessCategory'
 		}
 		var subjectstr = 'Subject: '
 		var findsubject = certificate.split('\n');
@@ -294,8 +304,11 @@ var openssl = function(options) {
 				//console.log(subjectline.split('='));
 				var subjectarr = subjectline.replace(/\//g, ', ')
 				var untrimmedsubject = subjectarr.split('=');
-				//console.log(splitsubject);
 				var splitsubject = trimSubjectAttrs(untrimmedsubject);
+				//if subject is blank return now
+				if(splitsubject.length <= 1 && splitsubject[0]=='') {
+					return null;
+				}
 				if(splitsubject[0].split(', ').length > 2) {
 					//console.log(splitsubject[j].split(', '));
 					value = splitsubject[1].split(', ').slice(0, -1).join(', ');
@@ -342,6 +355,7 @@ var openssl = function(options) {
 				}
 			}
 		}
+		//console.log(subject);
 		return subject;
 	}
 	
@@ -384,7 +398,12 @@ var openssl = function(options) {
 				//console.log(parsedextensions[key]);
 			}
 		}
-		return extensions;
+		//return null if there are no x509v3 extensions
+		if (Object.keys(extensions).length <= 0) {
+			return null;
+		} else {
+			return extensions;
+		}
 	}
 	
 	var getTLSFeature = function(feature) {
@@ -1260,8 +1279,8 @@ var openssl = function(options) {
 			'organizationalUnitName',
 			'commonName',
 			'emailAddress',
-			'jurisdictionOfIncorporationCountryName',
-			'jurisdictionOfIncorporationStateOrProvinceName',
+			'jurisdictionCountryName',
+			'jurisdictionStateOrProvinceName',
 			'jurisdictionLocalityName',
 			'businessCategory',
 			'serialNumber'
@@ -1310,26 +1329,26 @@ var openssl = function(options) {
 		if(cert || options.extensions) {
 			req.push('req_extensions = req_ext');
 		}
-		if(options.subject) {
-			req.push('distinguished_name = req_distinguished_name');
-			req.push('[ req_distinguished_name ]');
-			for (var prop in options.subject) {
-				//console.log(prop + typeof(options.subject[prop]));
-				if(validsubject.indexOf(prop) >=0 ) {
-					//if(prop=='commonName' || prop=='organizationalUnitName') {
-					if(typeof(options.subject[prop]) != 'string') {
-						for(var i = 0; i <= options.subject[prop].length - 1; i++) {
-							req.push(i + '.' + prop + ' = ' + options.subject[prop][i]);
-						}
-					} else {
-						req.push(prop + ' = ' + options.subject[prop]);
+		//if(options.subject) {
+		req.push('distinguished_name = req_distinguished_name');
+		req.push('[ req_distinguished_name ]');
+		for (var prop in options.subject) {
+			//console.log(prop + typeof(options.subject[prop]));
+			if(validsubject.indexOf(prop) >=0 ) {
+				//if(prop=='commonName' || prop=='organizationalUnitName') {
+				if(typeof(options.subject[prop]) != 'string') {
+					for(var i = 0; i <= options.subject[prop].length - 1; i++) {
+						req.push(i + '.' + prop + ' = ' + options.subject[prop][i]);
 					}
 				} else {
-					callback('Invalid subject: ' + prop, false);
-					return false;
+					req.push(prop + ' = ' + options.subject[prop]);
 				}
+			} else {
+				callback('Invalid subject: ' + prop, false);
+				return false;
 			}
 		}
+		//}
 		req.push('[ req_ext ]');
 		/*if(options.mustStaple) {
 			if(options.mustStaple==true) {
@@ -1843,6 +1862,10 @@ var openssl = function(options) {
 							if (err) throw err;
 							fs.writeFile(csrpath, req.join('\r\n'), function() {
 								var cmd = ['req -new -nodes -key ' + keypath + ' -config ' + csrpath];
+								//allows openssl to have a blank subject
+								if(!options.subject) {
+									cmd.push('-subj /')
+								}
 								if(password) {
 									var passfile = tmp.fileSync();
 									fs.writeFileSync(passfile.name, password);
