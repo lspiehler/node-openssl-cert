@@ -1312,15 +1312,22 @@ var openssl = function(options) {
 			req.push('default_md = ' + options.hash);
 			req.push('preserve = yes');
 			req.push('x509_extensions = req_ext');
-			req.push('email_in_dn = no');
+			//req.push('email_in_dn = no');
 			req.push('[ signing_policy ]');
 			req.push('countryName = optional');
 			req.push('stateOrProvinceName = optional');
 			req.push('localityName = optional');
+			req.push('postalCode = optional');
+			req.push('streetAddress = optional');
 			req.push('organizationName = optional');
 			req.push('organizationalUnitName = optional');
 			req.push('commonName = optional');
 			req.push('emailAddress = optional');
+			req.push('jurisdictionCountryName = optional');
+			req.push('jurisdictionStateOrProvinceName = optional');
+			req.push('jurisdictionLocalityName = optional');
+			req.push('businessCategory = optional');
+			req.push('serialNumber = optional');
 		}
 		
 		req.push('[ req ]');
