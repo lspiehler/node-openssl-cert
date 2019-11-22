@@ -1356,6 +1356,23 @@ var openssl = function(options) {
 			}
 		}
 		//}
+		if(options.extensions.policies) {
+			let policyconfig = generatePolicyConfig(options.extensions.policies);
+			for(let i = 0; i <= policyconfig.length - 1; i++) {
+				req.push(policyconfig[i]);
+			}
+		}
+		/*req.push('userNotice.1=@notice1');
+		req.push('userNotice.2=@notice2');
+		req.push('[notice1]');
+		req.push('explicitText="I can write anything I want here"');
+		req.push('organization="Organisation Name"');
+		req.push('noticeNumbers=1,2,3,4');
+		req.push('[notice2]');
+		req.push('explicitText="I can write anything I want here"');
+		req.push('organization="Organisation Name"');
+		req.push('noticeNumbers=1,2,3,4');*/
+		
 		req.push('[ req_ext ]');
 		/*if(options.mustStaple) {
 			if(options.mustStaple==true) {
@@ -1363,6 +1380,7 @@ var openssl = function(options) {
 			}
 		}*/
 		if(cert) {
+			//req.push('certificatePolicies = ia5org,2.5.29.32.0');
 			req.push('subjectKeyIdentifier = hash');
 			req.push('authorityKeyIdentifier = keyid:always,issuer');
 		}
@@ -1514,6 +1532,21 @@ var openssl = function(options) {
 							endconfig.push('URI.' + i + ' = ' + options.extensions[ext][i]);
 						}
 					}
+				} else if (ext == 'policies') {
+					if(options.extensions[ext].length > 0) {
+						let policyIndexes = []
+						//req.push('crlDistributionPoints = @crl_info');
+						//endconfig.push('[ crl_info ]');
+						for(var i = 0; i <= options.extensions[ext].length - 1; i++) {
+							//endconfig.push('URI.' + i + ' = ' + options.extensions[ext][i]);
+							if(options.extensions[ext][i]['policyIdentifier']) {
+								policyIndexes.push('@polsect' + i);
+							}
+						}
+						if(policyIndexes.length >= 1) {
+							req.push('certificatePolicies = ia5org,' + policyIndexes.join(','));
+						}
+					}
 				} else {
 					callback('Invalid extension: ' + ext, false);
 					return false;
@@ -1532,6 +1565,48 @@ var openssl = function(options) {
 		}
 		callback(false, req);
 		//console.log(req);
+	}
+	
+	var generatePolicyConfig = function(policies) {
+		let policyconfig = [];
+		for(let i = 0; i <= policies.length - 1; i++) {
+			policyconfig.push('[ polsect' + i + ' ]');
+			policyconfig.push('policyIdentifier = ' + policies[i].policyIdentifier);
+			if(policies[i].CPS) {
+				if(typeof(policies[i].CPS)=='string') {
+					policyconfig.push('CPS="' + policies[i].CPS +'"');
+				} else {
+					for(let j = 0; j <= policies[i].CPS.length - 1; j++) {
+						policyconfig.push('CPS.' + j + '="' + policies[i].CPS[j] +'"');
+					}
+				}
+			}
+			if(policies[i].userNotice) {
+				for(let j = 0; j <= policies[i].userNotice.length - 1; j++) {
+					policyconfig.push('userNotice.' + j + '=@notice' + j);
+				}
+				for(let j = 0; j <= policies[i].userNotice.length - 1; j++) {
+					policyconfig.push('[ notice' + j + ' ]');
+					if(policies[i].userNotice[j].explicitText) {
+						policyconfig.push('explicitText="' + policies[i].userNotice[j].explicitText + '"');
+					}
+					if(policies[i].userNotice[j].organization) {
+						policyconfig.push('organization="' + policies[i].userNotice[j].organization + '"');
+					}
+					if(policies[i].userNotice[j].noticeNumbers) {
+						policyconfig.push('noticeNumbers=' + policies[i].userNotice[j].noticeNumbers.join(','));
+					}
+				}
+			}
+		}
+		/*policyconfig.push('[ polsect0 ]');
+		policyconfig.push('policyIdentifier = 2.16.840.1.114412.2.1');
+		policyconfig.push('CPS.1="https://certificatetools.com"');
+		policyconfig.push('[ polsect1 ]');
+		policyconfig.push('policyIdentifier = 2.23.140.1.2.1');*/
+		
+		console.log(policyconfig);
+		return policyconfig;
 	}
 	
 	this.createPKCS7 = function(certs, callback) {

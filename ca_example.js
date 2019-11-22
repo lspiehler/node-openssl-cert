@@ -1,6 +1,11 @@
 const node_openssl = require('./index.js');
 var fs = require('fs');
-var openssl = new node_openssl();
+
+var options = {
+	binpath: 'C:/Program Files/OpenSSL-Win64/bin/openssl.exe'
+}
+
+var openssl = new node_openssl(options);
 
 var rsakeyoptions = {
 	encryption: {
@@ -24,14 +29,14 @@ var csroptions = {
 		postalCode: '70458',
 		streetAddress: '1001 Gause Blvd.',
 		organizationName: 'SMH',
+		emailAddress: 'lyas.spiehler@slidellmemorial.org',
 		organizationalUnitName: [
 			'IT'
 		],
 		commonName: [
 			'certificatetools.com',
 			'www.certificatetools.com'
-		],
-		emailAddress: 'lyas.spiehler@slidellmemorial.org'
+		]
 	},
 	extensions: {
 		basicConstraints: {
@@ -58,7 +63,21 @@ var csroptions = {
 				'certificatetools.com',
 				'www.certificatetools.com'
 			]
-		}
+		},
+		policies: [
+			{ policyIdentifier: '2.23.140.1.2.1' },
+			{
+				policyIdentifier: '2.5.29.32.0',
+				CPS: [
+					'http://cyopki.com'
+				],
+				userNotice: [{
+					explicitText: 'Some text here',
+					organization: 'CYOPKI',
+					noticeNumbers: [1, 2]
+				}]
+			}
+		]
 	}
 }
 
@@ -103,7 +122,7 @@ var cacsroptions = {
 	}
 }
 
-openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key, cmd) {
+/*openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key, cmd) {
 	openssl.generateCSR(csroptions, key, 'test', function(err, csr, cmd) {
 		openssl.CASignCSR(csr, csroptions, '/var/www/node/node-openssl-rest/ca/global/GeoTrustGlobalCA/', false, false, '', function(err, crt, cmd) {
 			if(err) {
@@ -116,7 +135,7 @@ openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key, cmd) {
 		});
 	});
 });
-return;
+return;*/
 openssl.generateRSAPrivateKey(rsakeyoptions, function(err, cakey, cmd) {
 	openssl.generateCSR(cacsroptions, cakey, 'test', function(err, csr, cmd) {
 		if(err) {
@@ -131,15 +150,25 @@ openssl.generateRSAPrivateKey(rsakeyoptions, function(err, cakey, cmd) {
 						openssl.generateCSR(csroptions, key, 'test', function(err, csr, cmd) {
 							//console.log(cakey);
 							//console.log(crt);
-							openssl.CASignCSR(csr, cacsroptions, false, cacrt ,cakey, 'test', function(err, crt, cmd) {
+							openssl.CASignCSR(csr, csroptions, false, cacrt ,cakey, 'test', function(err, crt, cmd) {
 								//console.log(cmd);
 								if(err) console.log(err);
+								console.log(cmd.files.config);
 								console.log(crt);
-								//console.log(cmd);
-								openssl.createPKCS7(new Array(crt, cacrt), function(err, pkcs7, command) {
+								/*openssl.createPKCS7(new Array(crt, cacrt), function(err, pkcs7, command) {
 									console.log(command);
 									console.log(pkcs7);
+								});*/
+								/*openssl.getCertInfo(crt, function(err, attrs, cmd) {
+									if(err) {
+										console.log(err);
+									} else {
+										console.log(attrs);
+										console.log(openssl.getDistinguishedName(attrs.subject));
+									}
 								});
+								
+								//console.log(cmd);
 								return;
 								openssl.createPKCS12(crt, key, 'test', false, cacrt, function(err, pfx, command) {
 									if(err) {
@@ -150,7 +179,7 @@ openssl.generateRSAPrivateKey(rsakeyoptions, function(err, cakey, cmd) {
 										console.log(command);
 									}
 									
-								});
+								});*/
 							});
 						});
 					});
