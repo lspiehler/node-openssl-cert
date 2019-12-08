@@ -1609,9 +1609,12 @@ var openssl = function(options) {
 		return policyconfig;
 	}
 	
-	this.createPKCS7 = function(certs, callback) {
+	this.createPKCS7 = function(certs, outform, callback) {
 		//console.log(typeof(certs));
-		var cmd = ['crl2pkcs7 -nocrl']
+		if(!outform) {
+			outform = 'PEM';
+		}
+		var cmd = ['crl2pkcs7 -nocrl -outform ' + outform]
 		var files = [];
 		for(var i = 0; i <= certs.length - 1; i++) {
 			var name = tmp.tmpNameSync();
