@@ -1636,6 +1636,7 @@ var openssl = function(options) {
 				} else {
 					//console.log(out.command);
 					fs.readFile(p7bpath, function(err, p7b) {
+						cleanupCallback1();
 						let p7bout;
 						if(outform.toUpperCase()=='PEM') {
 							p7bout = p7b.toString();
