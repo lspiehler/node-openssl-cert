@@ -1358,10 +1358,12 @@ var openssl = function(options) {
 			}
 		}
 		//}
-		if(options.extensions.policies) {
-			let policyconfig = generatePolicyConfig(options.extensions.policies);
-			for(let i = 0; i <= policyconfig.length - 1; i++) {
-				req.push(policyconfig[i]);
+		if(options.extensions) {
+			if(options.extensions.policies) {
+				let policyconfig = generatePolicyConfig(options.extensions.policies);
+				for(let i = 0; i <= policyconfig.length - 1; i++) {
+					req.push(policyconfig[i]);
+				}
 			}
 		}
 		/*req.push('userNotice.1=@notice1');
