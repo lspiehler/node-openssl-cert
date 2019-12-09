@@ -160,7 +160,8 @@ var openssl = function(options) {
 			'ipsec Internet Key Exchange': 'ipsecIKE',
 			'IPSec End System': 'ipsecEndSystem',
 			'IPSec Tunnel': 'ipsecTunnel',
-			'IPSec User': 'ipsecUser'
+			'IPSec User': 'ipsecUser',
+			'1.3.6.1.4.1.311.20.2.1': 'certificateRequestAgent'
 		}
 		var extendedkeyusages = eku.content[0].split(', ');
 		if(eku.critical) extendedkeyusage.critical = true;
@@ -1266,7 +1267,8 @@ var openssl = function(options) {
 			'ipsecIKE',
 			'ipsecEndSystem',
 			'ipsecTunnel',
-			'ipsecUser'
+			'ipsecUser',
+			'1.3.6.1.4.1.311.20.2.1'
 		]
 		
 		const validsubject = [
