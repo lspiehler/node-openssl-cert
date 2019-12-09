@@ -1614,29 +1614,40 @@ var openssl = function(options) {
 		if(!outform) {
 			outform = 'PEM';
 		}
-		var cmd = ['crl2pkcs7 -nocrl -outform ' + outform]
-		var files = [];
-		for(var i = 0; i <= certs.length - 1; i++) {
-			var name = tmp.tmpNameSync();
-			files.push(name);
-			fs.writeFileSync(name, certs[i]);
-			cmd.push('-certfile ' + name);
-		}
-		runOpenSSLCommand(cmd.join(' '), function(err, out) {
-			for(var i = 0; i <= files.length - 1; i++) {
-				fs.unlinkSync(files[i]);
+		tmp.file(function _tempFileCreated(err, p7bpath, fd, cleanupCallback1) {
+			if (err) throw err;
+			var cmd = ['crl2pkcs7 -nocrl -out ' + p7bpath + ' -outform ' + outform]
+			var files = [];
+			for(var i = 0; i <= certs.length - 1; i++) {
+				var name = tmp.tmpNameSync();
+				files.push(name);
+				fs.writeFileSync(name, certs[i]);
+				cmd.push('-certfile ' + name);
 			}
-			if(err) {
-				//console.log(out.command);
-				callback(err, out.stdout, {
-					command: [out.command]
-				});
-			} else {
-				//console.log(out.command);
-				callback(false, out.stdout, {
-					command: [out.command]
-				});
-			}
+			runOpenSSLCommand(cmd.join(' '), function(err, out) {
+				for(var i = 0; i <= files.length - 1; i++) {
+					fs.unlinkSync(files[i]);
+				}
+				if(err) {
+					//console.log(out.command);
+					callback(err, out.stdout, {
+						command: [out.command]
+					});
+				} else {
+					//console.log(out.command);
+					fs.readFile(p7bpath, function(err, p7b) {
+						let p7bout;
+						if(outform.toUpperCase()=='PEM') {
+							p7bout = p7b.toString();
+						} else {
+							p7bout = p7b;
+						}
+						callback(false, p7bout, {
+							command: [out.command]
+						});
+					});
+				}
+			});
 		});
 	}
 	
