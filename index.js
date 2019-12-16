@@ -113,10 +113,12 @@ var openssl = function(options) {
 			}
 			var value = san[1];
 			//console.log(type + ' - ' + value);
-			if(names[type]) {
-				names[type].push(value);
-			} else {
-				names[type] = [value];
+			if(value!='<unsupported>') {
+				if(names[type]) {
+					names[type].push(value);
+				} else {
+					names[type] = [value];
+				}
 			}
 		}
 		return names;
