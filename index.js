@@ -121,7 +121,12 @@ var openssl = function(options) {
 				}
 			}
 		}
-		return names;
+		
+		if(Object.keys(names).length > 0) {
+			return names;
+		} else {
+			return false;
+		}
 	}
 	
 	var getKeyUsage = function(ku) {
