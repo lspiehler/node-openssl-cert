@@ -394,7 +394,10 @@ var openssl = function(options) {
 		}
 		for(var key in parsedextensions) {
 			if(key=='Subject Alternative Name') {
-				extensions['SANs'] = getSubjectAlternativeNames(parsedextensions[key]);
+				let SANs = getSubjectAlternativeNames(parsedextensions[key]);
+				if(SANs) {
+					extensions['SANs'] = SANs;
+				}
 			} else if(key=='Key Usage') {
 				extensions['keyUsage'] = getKeyUsage(parsedextensions[key]);
 			} else if(key=='Extended Key Usage') {
