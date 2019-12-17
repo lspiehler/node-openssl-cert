@@ -721,6 +721,8 @@ var openssl = function(options) {
 				outattrs[attr] = attrs[i+1].trim(' ');
 			} else if(attr.indexOf('Public-Key') >= 0) {
 				outattrs['Public-Key'] = data[1].trim(' ').split(' ')[0].substring(1);
+			} else if(attr.indexOf('challengePassword') >= 0) {
+				outattrs['challengePassword'] = data[1].replace('\r','');
 			} else if(attr=='Not After') {
 				let parse = data.splice(1);
 				var date = parse.join(':').replace('\r\n','').replace('\r','').trim(' ');
