@@ -100,14 +100,17 @@ var openssl = function(options) {
 		return true;
 	}
 	
-	var getSubjectAlternativeNames = function(sans) {
+	var getSubjectAlternativeNames = function(sans, originalcert, callback) {
 		var names = {}
+		let processedunsupportedtypes = false;
 		var sanarr = sans.content[0].split(', ');
 		for(var i = 0; i <= sanarr.length - 1; i++) {
 			var san = sanarr[i].split(':');
 			var type;
 			if(san[0]=='IP Address') {
 				type = 'IP';
+			} else if(san[0]=='Registered ID') {
+				type = 'RID';
 			} else {
 				type = san[0];
 			}
@@ -119,17 +122,99 @@ var openssl = function(options) {
 				} else {
 					names[type] = [value];
 				}
+			} else {
+				if(!processedunsupportedtypes) {
+					processedunsupportedtypes = true;
+				}
 			}
 		}
 		
-		if(Object.keys(names).length > 0) {
-			return names;
+		if(processedunsupportedtypes) {
+			getUnsupportedSANs(originalcert, function(err, otherNames) {
+				if(err) {
+					return false;
+				} else {
+					names['otherName'] = otherNames;
+					/*if(Object.keys(names).length > 0) {
+						return names;
+					} else {
+						return false;
+					}*/
+					//console.log(names);
+					callback(null, names);
+				}
+			});
 		} else {
-			return false;
+			/*if(Object.keys(names).length > 0) {
+				return names;
+			} else {
+				return false;
+			}*/
+			//console.log(names);
+			callback(null, names);
 		}
 	}
 	
-	var getKeyUsage = function(ku) {
+	var getUnsupportedSANs = function(cert, callback) {
+		let oids = {
+			"Microsoft Universal Principal Name": "msUPN",
+			"Microsoft Smartcardlogin": "msSmartcardLogin"
+		}
+		let otherNameSANs = [];
+		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
+			if (err) throw err;
+			fs.writeFile(path, cert, function() {
+				let cmd = ['asn1parse -in ' + path + ' -inform pem'];
+				runOpenSSLCommand(cmd.join(' '), function(err, out) {
+					//cleanupCallback1();
+					if(err) {
+						//console.log(err);
+						cleanupCallback1();
+						callback(err, false);
+					} else {
+						let lines = out.stdout.split('\n');
+						for(let i = 1; i <= lines.length - 1; i++) {
+							if(lines[i].indexOf('X509v3 Subject Alternative Name') >= 1) {
+								let start = lines[i + 1].split(':')[0].trim();
+								cmd.push('-strparse ' + start);
+								runOpenSSLCommand(cmd.join(' '), function(err, out) {
+									if(err) {
+										//console.log(err);
+										cleanupCallback1();
+										callback(err, false);
+									} else {
+										//console.log(out.stdout);
+										let lines = out.stdout.split('\n');
+										for(let j = 1; j <= lines.length - 1; j++) {
+											if(lines[j].indexOf('cont [ 0 ]') >= 1) {
+												if(lines[j + 1].indexOf('OBJECT') >= 1) {
+													if(lines[j + 3].indexOf('UTF8STRING') >= 1) {
+														let oid = lines[j + 1].split(':')[3].replace('\r','');
+														if(oid.split('.').length >= 4) {
+															otherNameSANs.push(oid + ';UTF8:' + lines[j + 3].split(':')[3].replace('\r',''));
+														} else {
+															otherNameSANs.push(oids[oid] + ';UTF8:' + lines[j + 3].split(':')[3].replace('\r',''));
+														}
+														//console.log(otherNameSANs);
+														//console.log(lines[j + 3].split(':')[3].replace('\r',''));
+														j = j + 1;
+													}
+												}
+											}
+										}
+									}
+									callback(null, otherNameSANs);
+								});
+								break;
+							}
+						}
+					}
+				});
+			});
+		});
+	}
+	
+	var getKeyUsage = function(ku, callback) {
 		var keyusage = {}
 		var index = {
 			'Digital Signature': 'digitalSignature',
@@ -148,10 +233,10 @@ var openssl = function(options) {
 		for(var i = 0; i <= keyusages.length - 1; i++) {
 			keyusage['usages'].push(index[keyusages[i]]);
 		}
-		return keyusage;
+		callback(false, keyusage);
 	}
 	
-	var getExtendedKeyUsage = function(eku) {
+	var getExtendedKeyUsage = function(eku, callback) {
 		var extendedkeyusage = {}
 		var index = {
 			'TLS Web Server Authentication': 'serverAuth',
@@ -176,10 +261,10 @@ var openssl = function(options) {
 		for(var i = 0; i <= extendedkeyusages.length - 1; i++) {
 			extendedkeyusage['usages'].push(index[extendedkeyusages[i]]);
 		}
-		return extendedkeyusage;
+		callback(null, extendedkeyusage);
 	}
 	
-	var getBasicConstraints = function(bc) {
+	var getBasicConstraints = function(bc, callback) {
 		//console.log(bc);
 		var basicConstraints = {};
 		var constraints = bc.content[0].split(', ');
@@ -198,7 +283,7 @@ var openssl = function(options) {
 			}
 			basicConstraints[constraint[0]] = value;
 		}
-		return basicConstraints;
+		callback(null, basicConstraints);
 	}
 	 //this won't work for organization names with a ', '
 	/*var getSubject = function(certificate) {
@@ -367,8 +452,7 @@ var openssl = function(options) {
 		return subject;
 	}
 	
-	var getx509v3Attributes = function(certificate) {
-		var extensions = {}
+	var getx509v3Attributes = function(certificate, originalcert, callback) {
 		var parsedextensions = {};
 		//console.log(certificate);
 		var x509v3 = certificate.split('\n');
@@ -392,9 +476,12 @@ var openssl = function(options) {
 				}
 			}
 		}
-		for(var key in parsedextensions) {
+		
+		//console.log(parsedextensions);
+		
+		/*for(var key in parsedextensions) {
 			if(key=='Subject Alternative Name') {
-				let SANs = getSubjectAlternativeNames(parsedextensions[key]);
+				let SANs = getSubjectAlternativeNames(parsedextensions[key], originalcert);
 				if(SANs) {
 					extensions['SANs'] = SANs;
 				}
@@ -408,16 +495,60 @@ var openssl = function(options) {
 				extensions['tlsfeature'] = getTLSFeature(parsedextensions[key]);
 				//console.log(parsedextensions[key]);
 			}
-		}
+		}*/
 		//return null if there are no x509v3 extensions
-		if (Object.keys(extensions).length <= 0) {
-			return null;
+		parseExtensions(originalcert, parsedextensions, false, 0, function(err, extensions) {
+			if (Object.keys(extensions).length <= 0) {
+				callback(null, null);
+			} else {
+				callback(null, extensions);
+			}
+		});
+	}
+	
+	var parseExtensions = function(originalcert, parsedextensions, extensions, index, callback) {
+		if(!extensions) {
+			var extensions = {}
+		}
+		let ext = Object.keys(parsedextensions);
+		if(ext.length - 1 > index) {
+			index = index + 1;
+			console.log(ext[index]);
+			if(ext[index]=='Subject Alternative Name') {
+				getSubjectAlternativeNames(parsedextensions[ext[index]], originalcert, function(err, attrs) {
+					extensions['SANs'] = attrs;
+					parseExtensions(originalcert, parsedextensions, extensions, index, callback);
+				});
+			} else if(ext[index]=='Key Usage') {
+				getKeyUsage(parsedextensions[ext[index]], function(err, attrs) {
+					extensions['keyUsage'] = attrs;
+					parseExtensions(originalcert, parsedextensions, extensions, index, callback);
+				});
+			} else if(ext[index]=='Extended Key Usage') {
+				getExtendedKeyUsage(parsedextensions[ext[index]], function(err, attrs) {
+					extensions['extendedKeyUsage'] = attrs;
+					parseExtensions(originalcert, parsedextensions, extensions, index, callback);
+				});
+			} else if(ext[index]=='Basic Constraints') {
+				getBasicConstraints(parsedextensions[ext[index]], function(err, attrs) {
+					extensions['basicConstraints'] = attrs;
+					parseExtensions(originalcert, parsedextensions, extensions, index, callback);
+				});
+			} else if(ext[index]=='TLS Feature') {
+				getTLSFeature(parsedextensions[ext[index]], function(err, attrs) {
+					extensions['tlsfeature'] = attrs;
+					parseExtensions(originalcert, parsedextensions, extensions, index, callback);
+				});
+			} else {
+				parseExtensions(originalcert, parsedextensions, extensions, index, callback);
+			}
 		} else {
-			return extensions;
+			//console.log(extensions);
+			callback(null, extensions);
 		}
 	}
 	
-	var getTLSFeature = function(feature) {
+	var getTLSFeature = function(feature, callback) {
 		var tlsfeature = []
 		var index = {
 			'status_request': 'status_request',
@@ -426,7 +557,7 @@ var openssl = function(options) {
 		for(var i = 0; i <= tlsfeatures.length - 1; i++) {
 			tlsfeature.push(index[tlsfeatures[i]]);
 		}
-		return tlsfeature;
+		callback(null, tlsfeature);
 	}
 	
 	this.getCertFromURL = function(url, callback) {
@@ -621,16 +752,17 @@ var openssl = function(options) {
 					if(err) {
 						callback(out.stderr, false, cmd.join());
 					} else {
-						var extensions = getx509v3Attributes(out.stdout);
-						var subject = getSubject(out.stdout);
-						var attrs = getCertAttributes(out.stdout);
-						var csroptions = {
-							extensions: extensions,
-							subject: subject,
-							attributes: attrs
-						}
-						//callback(false,out.stdout,cmd.join());
-						callback(false,csroptions,'openssl ' + cmd.join().replace(path, 'cert.crt'));
+						getx509v3Attributes(out.stdout, cert, function(err, extensions) {
+							var subject = getSubject(out.stdout);
+							var attrs = getCertAttributes(out.stdout);
+							var csroptions = {
+								extensions: extensions,
+								subject: subject,
+								attributes: attrs
+							}
+							//callback(false,out.stdout,cmd.join());
+							callback(false,csroptions,'openssl ' + cmd.join().replace(path, 'cert.crt'));
+						});
 					}
 					cleanupCallback1();
 				});
@@ -649,16 +781,17 @@ var openssl = function(options) {
 					if(err) {
 						callback(out.stderr,false,cmd.join());
 					} else {
-						var extensions = getx509v3Attributes(out.stdout);
-						var subject = getSubject(out.stdout);
-						var attrs = getCertAttributes(out.stdout);
-						var csroptions = {
-							extensions: extensions,
-							subject: subject,
-							attributes: attrs
-						}
-						//callback(false,out.stdout,cmd.join());
-						callback(false,csroptions,'openssl ' + cmd.join().replace(path, 'cert.crt'));
+						getx509v3Attributes(out.stdout, cert, function(err, extensions) {
+							var subject = getSubject(out.stdout);
+							var attrs = getCertAttributes(out.stdout);
+							var csroptions = {
+								extensions: extensions,
+								subject: subject,
+								attributes: attrs
+							}
+							//callback(false,out.stdout,cmd.join());
+							callback(false,csroptions,'openssl ' + cmd.join().replace(path, 'cert.crt'));
+						});
 					}
 					cleanupCallback1();
 				});
@@ -703,14 +836,15 @@ var openssl = function(options) {
 					if(err) {
 						callback(true,out.stderr,cmd.join());
 					} else {
-						var extensions = getx509v3Attributes(out.stdout);
-						var subject = getSubject(out.stdout);
-						var csroptions = {
-							extensions: extensions,
-							subject: subject
-						}
-						//callback(false,out.stdout,cmd.join());
-						callback(false,csroptions,'openssl ' + cmd.join().replace(path, 'cert.crt'));
+						getx509v3Attributes(out.stdout, cert, function(err, extensions) {
+							var subject = getSubject(out.stdout);
+							var csroptions = {
+								extensions: extensions,
+								subject: subject
+							}
+							//callback(false,out.stdout,cmd.join());
+							callback(false,csroptions,'openssl ' + cmd.join().replace(path, 'cert.crt'));
+						});
 					}
 					cleanupCallback1();
 				});
