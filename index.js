@@ -513,7 +513,7 @@ var openssl = function(options) {
 		let ext = Object.keys(parsedextensions);
 		if(ext.length - 1 > index) {
 			index = index + 1;
-			console.log(ext[index]);
+			//console.log(ext[index]);
 			if(ext[index]=='Subject Alternative Name') {
 				getSubjectAlternativeNames(parsedextensions[ext[index]], originalcert, function(err, attrs) {
 					extensions['SANs'] = attrs;
@@ -1753,7 +1753,7 @@ var openssl = function(options) {
 		policyconfig.push('[ polsect1 ]');
 		policyconfig.push('policyIdentifier = 2.23.140.1.2.1');*/
 		
-		console.log(policyconfig);
+		//console.log(policyconfig);
 		return policyconfig;
 	}
 	
