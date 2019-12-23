@@ -854,6 +854,29 @@ var openssl = function(options) {
 		});
 	}
 	
+	this.getCertHash = function(cert, hash, callback) {
+		let hashtypes = ['sha256', 'sha1', 'md5']
+		console.log(hashtypes.indexOf(hash.toLowerCase()));
+		if(hashtypes.indexOf(hash.toLowerCase()) >= 0) {
+			tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
+				if (err) throw err;
+				fs.writeFile(path, cert, function() {
+					var cmd = ['x509 -noout -fingerprint -' + hash.toLowerCase() + ' -inform pem -in ' + path];
+					runOpenSSLCommand(cmd.join(' '), function(err, out) {
+						if(err) {
+							callback(true, false, out.command.replace(path, 'cert.pem'));
+						} else {
+							callback(false, out.stdout.split('=')[1], out.command.replace(path, 'cert.pem'));
+						}
+						cleanupCallback1();
+					});
+				});
+			});
+		} else {
+			callback('invalid hash type', false, null);
+		}
+	}
+	
 	this.getOCSPHashes = function(ca, cert, hashalg, callback) {
 		let hashes = ['sha1', 'sha256', 'sha384', 'sha512'];
 		//console.log(hashes.includes(hashalg))
