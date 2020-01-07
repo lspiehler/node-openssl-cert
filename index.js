@@ -1561,50 +1561,63 @@ var openssl = function(options) {
 			//req.push('[ req_ext ]');
 			var endconfig = [];
 			for(var ext in options.extensions) {
+				console.log('yes');
 				if(ext == 'SANs') {
-					var sansatend = [];
-					sansatend.push('subjectAltName = @alt_names');
-					sansatend.push('[ alt_names ]');
-					for(var type in options.extensions[ext]) {
-						if(validsantypes.indexOf(type) >= 0) {
-							for(var i = 0; i <= options.extensions[ext][type].length - 1; i++) {
-								sansatend.push(type + '.' + i  + ' = ' + options.extensions[ext][type][i]);
+					if(options.extensions[ext]) {
+						if(Object.keys(options.extensions[ext]).length >= 1) {
+							var sansatend = [];
+							sansatend.push('subjectAltName = @alt_names');
+							sansatend.push('[ alt_names ]');
+							for(var type in options.extensions[ext]) {
+								if(validsantypes.indexOf(type) >= 0) {
+									for(var i = 0; i <= options.extensions[ext][type].length - 1; i++) {
+										sansatend.push(type + '.' + i  + ' = ' + options.extensions[ext][type][i]);
+									}
+								} else {
+									callback('Invalid ' + ext + ' type : ' +  '"' + type + '"', false);
+									return false;
+								}
 							}
-						} else {
-							callback('Invalid ' + ext + ' type : ' +  '"' + type + '"', false);
-							return false;
 						}
 					}
 				} else if (ext == 'extendedKeyUsage') {
-					var critical = '';
-					var valid = 0;
-					for(var i = 0; i <= options.extensions[ext].usages.length - 1; i++) {
-						if(validextkeyusage.indexOf(options.extensions[ext].usages[i]) < 0) {
-							callback('Invalid ' + ext + ': ' + options.extensions[ext].usages[i], false);
-							return false;
-						} else {
-							valid++;
+					if(options.extensions[ext]) {
+						if(Object.keys(options.extensions[ext]).length >= 1) {
+							var critical = '';
+							var valid = 0;
+							for(var i = 0; i <= options.extensions[ext].usages.length - 1; i++) {
+								if(validextkeyusage.indexOf(options.extensions[ext].usages[i]) < 0) {
+									callback('Invalid ' + ext + ': ' + options.extensions[ext].usages[i], false);
+									return false;
+								} else {
+									valid++;
+								}
+							}
+							if(valid > 0) {
+								if(options.extensions[ext].critical) critical = 'critical,';
+								req.push(ext + '=' + critical + options.extensions[ext].usages.join(','));
+							}
 						}
-					}
-					if(valid > 0) {
-						if(options.extensions[ext].critical) critical = 'critical,';
-						req.push(ext + '=' + critical + options.extensions[ext].usages.join(','));
 					}
 				} else if (ext == 'keyUsage') {
-					var critical = '';
-					var valid = 0;
-					for(var i = 0; i <= options.extensions[ext].usages.length - 1; i++) {
-						//console.log(options.extensions[ext]);
-						if(validkeyusage.indexOf(options.extensions[ext].usages[i]) < 0) {
-							callback('Invalid ' + ext + ': ' + options.extensions[ext].usages[i], false);
-							return false;
-						} else {
-							valid++;
+					if(options.extensions[ext]) {
+						if(Object.keys(options.extensions[ext]).length >= 1) {
+							var critical = '';
+							var valid = 0;
+							for(var i = 0; i <= options.extensions[ext].usages.length - 1; i++) {
+								//console.log(options.extensions[ext]);
+								if(validkeyusage.indexOf(options.extensions[ext].usages[i]) < 0) {
+									callback('Invalid ' + ext + ': ' + options.extensions[ext].usages[i], false);
+									return false;
+								} else {
+									valid++;
+								}
+							}
+							if(valid > 0) {
+								if(options.extensions[ext].critical) critical = 'critical,';
+								req.push(ext + '=' + critical + options.extensions[ext].usages.join(','));
+							}
 						}
-					}
-					if(valid > 0) {
-						if(options.extensions[ext].critical) critical = 'critical,';
-						req.push(ext + '=' + critical + options.extensions[ext].usages.join(','));
 					}
 				} else if (ext == 'tlsfeature') {
 					var critical = '';
@@ -1623,60 +1636,64 @@ var openssl = function(options) {
 						req.push(ext + '=' + options.extensions[ext].join(','));
 					}
 				} else if (ext == 'basicConstraints') {
-					var bccmd = [];
-					var valid = 0;
-					for(var type in options.extensions[ext]) {
-						if(type=='critical') {
-							var reqtype = 'boolean';
-							if(typeof(options.extensions[ext][type]) == reqtype) {
-								if (options.extensions[ext][type]) {
-									bccmd.unshift('critical');
+					if(options.extensions[ext]) {
+						if(Object.keys(options.extensions[ext]).length >= 1) {
+							var bccmd = [];
+							var valid = 0;
+							for(var type in options.extensions[ext]) {
+								if(type=='critical') {
+									var reqtype = 'boolean';
+									if(typeof(options.extensions[ext][type]) == reqtype) {
+										if (options.extensions[ext][type]) {
+											bccmd.unshift('critical');
+										} else {
+											//not critical
+										}
+										valid++;
+									} else {
+										callback('Provided ' + ext + ' parameter \'' + type + '\' is type ' + typeof(options.extensions[ext][type]) + ', ' + reqtype + ' required', false);
+										return false;
+									}
+									//console.log(options.extensions[ext][type]);
+								} else if(type=='CA') {
+									var reqtype = 'boolean';
+									if(typeof(options.extensions[ext][type]) == reqtype) {
+										if (options.extensions[ext][type]) {
+											bccmd.push('CA:true');
+										} else {
+											bccmd.push('CA:false');
+										}
+										valid++;
+									} else {
+										callback('Provided ' + ext + ' parameter \'' + type + '\' is type ' + typeof(options.extensions[ext][type]) + ', ' + reqtype + ' required', false);
+										return false;
+									}
+								} else if(type=='pathlen') {
+									var reqtype = 'number';
+									if(typeof(options.extensions[ext][type]) == reqtype) {
+										if (options.extensions[ext][type] >= 0) {
+											bccmd.push('pathlen:' + options.extensions[ext][type]);
+										} else {
+											//optional pathlen not defined
+										}
+										valid++;
+									} else {
+										callback('Provided ' + ext + ' parameter \'' + type + '\' is type ' + typeof(options.extensions[ext][type]) + ', ' + reqtype + ' required', false);
+										return false;
+									}
 								} else {
-									//not critical
+									callback('Invalid ' + ext + ': ' + type, false);
+									return false;
 								}
-								valid++;
-							} else {
-								callback('Provided ' + ext + ' parameter \'' + type + '\' is type ' + typeof(options.extensions[ext][type]) + ', ' + reqtype + ' required', false);
+							}
+							if(valid > 0) {
+								req.push('basicConstraints=' + bccmd.join(','));
+							}
+							if(valid == 1 && bccmd[0]=='critical') {
+								callback('Basic constraints cannot contain only \'critical\'', false);
 								return false;
 							}
-							//console.log(options.extensions[ext][type]);
-						} else if(type=='CA') {
-							var reqtype = 'boolean';
-							if(typeof(options.extensions[ext][type]) == reqtype) {
-								if (options.extensions[ext][type]) {
-									bccmd.push('CA:true');
-								} else {
-									bccmd.push('CA:false');
-								}
-								valid++;
-							} else {
-								callback('Provided ' + ext + ' parameter \'' + type + '\' is type ' + typeof(options.extensions[ext][type]) + ', ' + reqtype + ' required', false);
-								return false;
-							}
-						} else if(type=='pathlen') {
-							var reqtype = 'number';
-							if(typeof(options.extensions[ext][type]) == reqtype) {
-								if (options.extensions[ext][type] >= 0) {
-									bccmd.push('pathlen:' + options.extensions[ext][type]);
-								} else {
-									//optional pathlen not defined
-								}
-								valid++;
-							} else {
-								callback('Provided ' + ext + ' parameter \'' + type + '\' is type ' + typeof(options.extensions[ext][type]) + ', ' + reqtype + ' required', false);
-								return false;
-							}
-						} else {
-							callback('Invalid ' + ext + ': ' + type, false);
-							return false;
 						}
-					}
-					if(valid > 0) {
-						req.push('basicConstraints=' + bccmd.join(','));
-					}
-					if(valid == 1 && bccmd[0]=='critical') {
-						callback('Basic constraints cannot contain only \'critical\'', false);
-						return false;
 					}
 				} else if (ext == 'authorityInfoAccess') {
 					let aiaconfig = [];
