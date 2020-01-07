@@ -1561,7 +1561,6 @@ var openssl = function(options) {
 			//req.push('[ req_ext ]');
 			var endconfig = [];
 			for(var ext in options.extensions) {
-				console.log('yes');
 				if(ext == 'SANs') {
 					if(options.extensions[ext]) {
 						if(Object.keys(options.extensions[ext]).length >= 1) {
