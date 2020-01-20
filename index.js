@@ -355,16 +355,20 @@ var openssl = function(options) {
 		
 		let dn = [];
 		
-		var keys = Object.keys(subjectobj);
-		for(let i = 0; i <= keys.length - 1; i++) {
-			if(typeof(subjectobj[keys[i]])=='string') {
-				dn.push('/' + index[keys[i]] + '=' + subjectobj[keys[i]])
-			} else {
-				for(let j = 0; j <= subjectobj[keys[i]].length - 1; j++) {
-					dn.push('/' + index[keys[i]] + '=' + subjectobj[keys[i]][j]);
+		try {
+			var keys = Object.keys(subjectobj);
+			for(let i = 0; i <= keys.length - 1; i++) {
+				if(typeof(subjectobj[keys[i]])=='string') {
+					dn.push('/' + index[keys[i]] + '=' + subjectobj[keys[i]])
+				} else {
+					for(let j = 0; j <= subjectobj[keys[i]].length - 1; j++) {
+						dn.push('/' + index[keys[i]] + '=' + subjectobj[keys[i]][j]);
+					}
 				}
-			}
-		}	
+			}	
+		} catch(e) {
+			dn.push('/');
+		}
 		return dn.join('');
 	}
 	
@@ -1957,7 +1961,7 @@ var openssl = function(options) {
 										cmd.push('-days ' + options.days);
 									}
 									if(options.subject) {
-										cmd.push('-subj ' + getDistinguishedName(options.subject));
+										cmd.push('-subj "' + getDistinguishedName(options.subject) + '"');
 									}
 									if(password) {
 										var passfile = tmp.fileSync();
