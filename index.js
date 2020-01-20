@@ -335,7 +335,7 @@ var openssl = function(options) {
 		return trimmed;
 	}
 	
-	this.getDistinguishedName = function(subjectobj) {
+	var getDistinguishedName = function(subjectobj) {
 		var index = {
 			'countryName': 'C',
 			'stateOrProvinceName': 'ST',
@@ -366,6 +366,10 @@ var openssl = function(options) {
 			}
 		}	
 		return dn.join('');
+	}
+	
+	this.getDistinguishedName = function(subjectobj) {
+		return getDistinguishedName(subjectobj);
 	}
 	
 	var getSubject = function(certificate) {
@@ -1951,6 +1955,9 @@ var openssl = function(options) {
 										cmd.push('-startdate ' + moment(options.startdate).format('YYYYMMDDHHmmss') + 'Z -enddate ' + moment(options.enddate).format('YYYYMMDDHHmmss') + 'Z');
 									} else {
 										cmd.push('-days ' + options.days);
+									}
+									if(options.subject) {
+										cmd.push('-subj ' + getDistinguishedName(options.subject));
 									}
 									if(password) {
 										var passfile = tmp.fileSync();
