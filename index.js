@@ -2052,6 +2052,9 @@ var openssl = function(options) {
 														//fs.writeFile(serialpath, req.join('\r\n'), function() {
 															var cmd = ['x509 -req -in ' + csrpath + ' -days ' + options.days + ' -CA ' + capath + ' -CAkey ' + keypath + ' -extfile ' + csrconfig + ' -extensions req_ext -CAserial ' + serialpath + ' -CAcreateserial'];
 															//var cmd = ['x509 -req -in ' + csrpath + ' -days ' + options.days + ' -CA ' + capath + ' -CAkey ' + keypath + ' -extfile ' + csrconfig + ' -extensions req_ext'];
+															if(options.hash) {
+																cmd.push('-' + options.hash);
+															}
 															if(password) {
 																var passfile = tmp.fileSync();
 																fs.writeFileSync(passfile.name, password);

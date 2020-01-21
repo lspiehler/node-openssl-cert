@@ -1,6 +1,6 @@
 {
   "name": "node-openssl-cert",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Node.JS OpenSSL wrapper",
   "main": "index.js",
   "directories": {
