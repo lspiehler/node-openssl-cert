@@ -21,6 +21,25 @@ var openssl = function(options) {
 		
 	}
 	
+	var normalizeCommand = function(command) {
+		let cmd = command.split(' ');
+		let outcmd = [];
+		let cmdbuffer = [];
+		for(let i = 0; i <= cmd.length - 1; i++) {
+			if(cmd[i].charAt(cmd[i].length - 1) == '\\') {
+				cmdbuffer.push(cmd[i]);
+			} else {
+				if(cmdbuffer.length > 0) {
+					outcmd.push(cmdbuffer.join(' ') + ' ' + cmd[i]);
+					cmdbuffer.length = 0;
+				} else {
+					outcmd.push(cmd[i]);
+				}
+			}
+		}
+		return outcmd;
+	}
+	
 	var runOpenSSLCommand = function(cmd, callback) {
 		const stdoutbuff = [];
 		const stderrbuff = [];
@@ -30,7 +49,7 @@ var openssl = function(options) {
 			terminate = true;
 		}
 		
-		const openssl = spawn( opensslbinpath, cmd.split(' ') );
+		const openssl = spawn( opensslbinpath, normalizeCommand(cmd) );
 		
 		openssl.stdout.on('data', function(data) {
 			stdoutbuff.push(data.toString());
@@ -763,18 +782,22 @@ var openssl = function(options) {
 						callback(out.stderr, false, cmd.join());
 					} else {
 						getx509v3Attributes(out.stdout, cert, function(err, extensions) {
-							var subject = getSubject(out.stdout);
-							var attrs = getCertAttributes(out.stdout);
-							var csroptions = {
-								extensions: extensions,
-								subject: subject,
-								attributes: attrs
+							cleanupCallback1();
+							if(err) {
+								callback(err, false, cmd.join())
+							} else {
+								var subject = getSubject(out.stdout);
+								var attrs = getCertAttributes(out.stdout);
+								var csroptions = {
+									extensions: extensions,
+									subject: subject,
+									attributes: attrs
+								}
+								//callback(false,out.stdout,cmd.join());
+								callback(false,csroptions,'openssl ' + cmd.join().replace(path, 'cert.crt'));
 							}
-							//callback(false,out.stdout,cmd.join());
-							callback(false,csroptions,'openssl ' + cmd.join().replace(path, 'cert.crt'));
 						});
 					}
-					cleanupCallback1();
 				});
 			});
 		});
@@ -792,18 +815,22 @@ var openssl = function(options) {
 						callback(out.stderr,false,cmd.join());
 					} else {
 						getx509v3Attributes(out.stdout, cert, function(err, extensions) {
-							var subject = getSubject(out.stdout);
-							var attrs = getCertAttributes(out.stdout);
-							var csroptions = {
-								extensions: extensions,
-								subject: subject,
-								attributes: attrs
+							cleanupCallback1();
+							if(err) {
+								callback(err, false, cmd.join())
+							} else {
+								var subject = getSubject(out.stdout);
+								var attrs = getCertAttributes(out.stdout);
+								var csroptions = {
+									extensions: extensions,
+									subject: subject,
+									attributes: attrs
+								}
+								//callback(false,out.stdout,cmd.join());
+								callback(false,csroptions,'openssl ' + cmd.join().replace(path, 'cert.crt'));
 							}
-							//callback(false,out.stdout,cmd.join());
-							callback(false,csroptions,'openssl ' + cmd.join().replace(path, 'cert.crt'));
 						});
 					}
-					cleanupCallback1();
 				});
 			});
 		});
@@ -864,7 +891,7 @@ var openssl = function(options) {
 	
 	this.getCertHash = function(cert, hash, callback) {
 		let hashtypes = ['sha256', 'sha1', 'md5']
-		console.log(hashtypes.indexOf(hash.toLowerCase()));
+		//console.log(hashtypes.indexOf(hash.toLowerCase()));
 		if(hashtypes.indexOf(hash.toLowerCase()) >= 0) {
 			tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 				if (err) throw err;
@@ -1955,13 +1982,13 @@ var openssl = function(options) {
 								if (err) throw err;
 								fs.writeFile(csrpath, csr, function() {
 									var cmd = ['ca -config ' + config + ' -create_serial -in ' + csrpath + ' -policy signing_policy -batch -notext'];
+									if(options.subject) {
+										cmd.push('-subj ' + getDistinguishedName(options.subject));
+									}
 									if(options.startdate) {
 										cmd.push('-startdate ' + moment(options.startdate).format('YYYYMMDDHHmmss') + 'Z -enddate ' + moment(options.enddate).format('YYYYMMDDHHmmss') + 'Z');
 									} else {
 										cmd.push('-days ' + options.days);
-									}
-									if(options.subject) {
-										cmd.push('-subj ' + getDistinguishedName(options.subject));
 									}
 									if(password) {
 										var passfile = tmp.fileSync();
