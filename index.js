@@ -481,7 +481,6 @@ var openssl = function(options) {
 	
 	var getx509v3Attributes = function(certificate, originalcert, callback) {
 		var parsedextensions = {};
-		//console.log(certificate);
 		var x509v3 = certificate.split('\n');
 		for(var i = 0; i <= x509v3.length - 1; i++) {
 			if(x509v3[i].indexOf('X509v3') >= 0 || x509v3[i].indexOf('CT Precertificate SCTs') >= 0 || x509v3[i].indexOf('Authority Information Access') >= 0 || x509v3[i].indexOf('TLS Feature') >= 0 ) {
@@ -538,36 +537,35 @@ var openssl = function(options) {
 			var extensions = {}
 		}
 		let ext = Object.keys(parsedextensions);
-		if(ext.length - 1 > index) {
-			index = index + 1;
+		if(ext.length > index) {
 			//console.log(ext[index]);
 			if(ext[index]=='Subject Alternative Name') {
 				getSubjectAlternativeNames(parsedextensions[ext[index]], originalcert, function(err, attrs) {
 					extensions['SANs'] = attrs;
-					parseExtensions(originalcert, parsedextensions, extensions, index, callback);
+					parseExtensions(originalcert, parsedextensions, extensions, index + 1, callback);
 				});
 			} else if(ext[index]=='Key Usage') {
 				getKeyUsage(parsedextensions[ext[index]], function(err, attrs) {
 					extensions['keyUsage'] = attrs;
-					parseExtensions(originalcert, parsedextensions, extensions, index, callback);
+					parseExtensions(originalcert, parsedextensions, extensions, index + 1, callback);
 				});
 			} else if(ext[index]=='Extended Key Usage') {
 				getExtendedKeyUsage(parsedextensions[ext[index]], function(err, attrs) {
 					extensions['extendedKeyUsage'] = attrs;
-					parseExtensions(originalcert, parsedextensions, extensions, index, callback);
+					parseExtensions(originalcert, parsedextensions, extensions, index + 1, callback);
 				});
 			} else if(ext[index]=='Basic Constraints') {
 				getBasicConstraints(parsedextensions[ext[index]], function(err, attrs) {
 					extensions['basicConstraints'] = attrs;
-					parseExtensions(originalcert, parsedextensions, extensions, index, callback);
+					parseExtensions(originalcert, parsedextensions, extensions, index + 1, callback);
 				});
 			} else if(ext[index]=='TLS Feature') {
 				getTLSFeature(parsedextensions[ext[index]], function(err, attrs) {
 					extensions['tlsfeature'] = attrs;
-					parseExtensions(originalcert, parsedextensions, extensions, index, callback);
+					parseExtensions(originalcert, parsedextensions, extensions, index + 1, callback);
 				});
 			} else {
-				parseExtensions(originalcert, parsedextensions, extensions, index, callback);
+				parseExtensions(originalcert, parsedextensions, extensions, index + 1, callback);
 			}
 		} else {
 			//console.log(extensions);
