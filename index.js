@@ -272,7 +272,7 @@ var openssl = function(options) {
 			'IPSec End System': 'ipsecEndSystem',
 			'IPSec Tunnel': 'ipsecTunnel',
 			'IPSec User': 'ipsecUser',
-			'1.3.6.1.4.1.311.20.2.1': 'certificateRequestAgent'
+			'1.3.6.1.4.1.311.20.2.1': '1.3.6.1.4.1.311.20.2.1'
 		}
 		var extendedkeyusages = eku.content[0].split(', ');
 		if(eku.critical) extendedkeyusage.critical = true;
