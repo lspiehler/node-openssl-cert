@@ -1980,8 +1980,12 @@ var openssl = function(options) {
 								if (err) throw err;
 								fs.writeFile(csrpath, csr, function() {
 									var cmd = ['ca -config ' + config + ' -create_serial -in ' + csrpath + ' -policy signing_policy -batch -notext'];
-									if(options.subject) {
-										cmd.push('-subj ' + getDistinguishedName(options.subject));
+									if(options.hasOwnProperty('subject')) {
+										if(options.subject===false || options.subject===null) {
+											cmd.push('-subj /')
+										} else {
+											cmd.push('-subj ' + getDistinguishedName(options.subject));
+										}
 									}
 									if(options.startdate) {
 										cmd.push('-startdate ' + moment(options.startdate).format('YYYYMMDDHHmmss') + 'Z -enddate ' + moment(options.enddate).format('YYYYMMDDHHmmss') + 'Z');
