@@ -768,6 +768,35 @@ var openssl = function(options) {
 		return outattrs;
 	}
 	
+	this.verifyChain = function(cert, chain, callback) {
+		var cmd = [];
+		tmp.file(function _tempFileCreated(err, certpath, fd, cleanupCallback1) {
+			if (err) throw err;
+			fs.writeFile(certpath, cert, function() {
+				tmp.file(function _tempFileCreated(err, chainpath, fd, cleanupCallback2) {
+					if (err) throw err;
+					fs.writeFile(chainpath, chain, function() {
+						cmd.push('verify -CAfile ' + chainpath + ' ' + certpath);
+						runOpenSSLCommand(cmd.join(), function(err, out) {
+							//console.log(out);
+							if(err) {
+								callback(out.stderr, false, cmd.join());
+							} else {
+								if(out.stdout.indexOf(': OK\\')) {
+									callback(false, 'OK', out.command.replace(certpath, 'cert.crt').replace(chainpath, 'chain.pem'));
+								} else {
+									callback(out.stdout, out.stdout, out.command.replace(certpath, 'cert.crt').replace(chainpath, 'chain.pem'));
+								}
+							}
+							cleanupCallback1();
+							cleanupCallback2();
+						});
+					});
+				});
+			});
+		});
+	}
+	
 	var getCertInfo = function(cert, callback) {
 		var cmd = [];
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
