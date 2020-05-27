@@ -482,11 +482,12 @@ var openssl = function(options) {
 	var getx509v3Attributes = function(certificate, originalcert, callback) {
 		var parsedextensions = {};
 		var x509v3 = certificate.split('\n');
+		//console.log(x509v3);
 		for(var i = 0; i <= x509v3.length - 1; i++) {
 			if(x509v3[i].indexOf('X509v3') >= 0 || x509v3[i].indexOf('CT Precertificate SCTs') >= 0 || x509v3[i].indexOf('Authority Information Access') >= 0 || x509v3[i].indexOf('TLS Feature') >= 0 ) {
 				var ext = x509v3[i].split(':');
 				var extname = ext[0].replace('X509v3','').trim();
-				//console.log(extname);
+				//console.log(ext);
 				var critical = false;
 				if(ext[1].replace('\r\n').replace('\n').trim()=='critical') {
 					critical = true;
@@ -564,12 +565,69 @@ var openssl = function(options) {
 					extensions['tlsfeature'] = attrs;
 					parseExtensions(originalcert, parsedextensions, extensions, index + 1, callback);
 				});
+			} else if(ext[index]=='Authority Information Access') {
+				getAIA(parsedextensions[ext[index]], function(err, attrs) {
+					extensions['authorityInfoAccess'] = attrs;
+					parseExtensions(originalcert, parsedextensions, extensions, index + 1, callback);
+				});
+			} else if(ext[index]=='CRL Distribution Points') {
+				getCDP(parsedextensions[ext[index]], function(err, attrs) {
+					extensions['crlDistributionPoints'] = attrs;
+					parseExtensions(originalcert, parsedextensions, extensions, index + 1, callback);
+				});
 			} else {
 				parseExtensions(originalcert, parsedextensions, extensions, index + 1, callback);
 			}
 		} else {
 			//console.log(extensions);
 			callback(null, extensions);
+		}
+	}
+	
+	var getCDP = function(cdp, callback) {
+		//console.log(cdp);
+		let cdpitems = [];
+		for(let i = 0; i <= cdp.content.length - 1; i++) {
+			if(cdp.content[i].indexOf('URI:') >= 0) {
+				cdpitems.push(cdp.content[i].replace('URI:', ''));
+			}
+		}
+		if(cdpitems.length > 0) {
+			callback(false, cdpitems);
+		} else {
+			callback(false, false);
+		}
+	}
+	
+	var getAIA = function(aia, callback) {
+		//console.log(aia.content);
+		var ocspitems = [];
+		var aiaitems = [];
+		//var valid = ['OCSP', 'CA Issuers']
+		for(let i = 0; i <= aia.content.length - 1; i++) {
+			//if(aia.content[i].split('-')[0].trim().indexOf()) {
+			let attritem = aia.content[i].split(' - ')
+			//console.log(valid.indexOf(attritem[0].trim()));
+			if(attritem[0].trim() == 'OCSP') {
+				ocspitems.push(attritem[1].trim().replace('URI:', ''));
+			} else if(attritem[0].trim() == 'CA Issuers') {
+				aiaitems.push(attritem[1].trim().replace('URI:', ''));
+			} else {
+				
+			}
+		}
+		let authorityInfoAccess = false;
+		if(ocspitems.length > 0 || aiaitems.length > 0) {
+			authorityInfoAccess = {}
+			if(ocspitems.length > 0) {
+				authorityInfoAccess.OCSP = ocspitems;
+			}
+			if(aiaitems.length > 0) {
+				authorityInfoAccess.caIssuers = aiaitems;
+			}
+			callback(false, authorityInfoAccess);
+		} else {
+			callback(false, false);
 		}
 	}
 	
@@ -794,6 +852,89 @@ var openssl = function(options) {
 					});
 				});
 			});
+		});
+	}
+	
+	this.convertDERPKCS7toPEM = function(p7b, callback) {
+		convertDERPKCS7toPEM(p7b, callback);
+	}
+	
+	var convertDERPKCS7toPEM = function(p7b, callback) {
+		var cmd = [];
+		tmp.file(function _tempFileCreated(err, p7bpath, fd, cleanupCallback1) {
+			if (err) throw err;
+			fs.writeFile(p7bpath, p7b, function() {
+				cmd.push('pkcs7 -print_certs -inform DER -in ' + p7bpath);
+				runOpenSSLCommand(cmd.join(), function(err, out) {
+					//console.log(out);
+					if(err) {
+						callback(err, out.stderr, out.command.replace(p7bpath, 'cert.p7b'));
+					} else {
+						const begin = '-----BEGIN CERTIFICATE-----';
+						const end = '-----END CERTIFICATE-----';
+						var placeholder = out.stdout.indexOf(begin);
+						var certs = [];
+						var endoutput = false;
+						if(placeholder <= 0) {
+							endoutput = true;
+							callback('No certificate found in openssl command response', 'No certificate found in openssl command response', 'openssl ' + command);
+							return;
+						}
+						var shrinkout = out.stdout.substring(placeholder);
+						//console.log(shrinkout);
+						while(!endoutput) {
+							let endofcert = shrinkout.indexOf(end);
+							certs.push(shrinkout.substring(0, endofcert) + end);
+							shrinkout = shrinkout.substring(endofcert); 
+							
+							placeholder = shrinkout.indexOf(begin);
+							//console.log(placeholder);
+							if(placeholder <= 0) {
+								endoutput = true;
+							} else {
+								shrinkout = shrinkout.substring(placeholder);
+							}
+						}
+						callback(false, certs, out.command.replace(p7bpath, 'cert.p7b'));
+					}
+				});
+			});
+		});
+	}
+	
+	this.getCertChain = function(cert, chain, callback) {
+		getCertChain(cert, chain, callback);
+	}
+	
+	var getCertChain = function(cert, chain, callback) {
+		//console.log(chain);
+		getCertInfo(cert, function(err, certinfo, cmd) {
+			if(err) {
+				callback(err, false, cmd);
+			} else {
+				//certinfo.base64 = cert;
+				//console.log(certinfo);
+				if(certinfo.extensions && certinfo.extensions.authorityInfoAccess && certinfo.extensions.authorityInfoAccess.caIssuers[0]) {
+					//console.log(certinfo.extensions.authorityInfoAccess.caIssuers[0]);
+					downloadIssuer(certinfo.extensions.authorityInfoAccess.caIssuers[0], function(err, dcert) {
+						if(err) {
+							callback(err, false);
+						} else {
+							//console.log(dcert);
+							//console.log(typeof(chain));
+							//callback(false, [dcert]);
+							chain.push(dcert.trim());
+							getCertChain(dcert, chain, callback);
+						}
+					});
+				} else {
+					if(chain.length >= 0) {
+						callback(false, chain);
+					} else {
+						callback('failed to download chain', false);
+					}
+				}
+			}
 		});
 	}
 	
@@ -1183,6 +1324,10 @@ var openssl = function(options) {
 	}
 	
 	this.downloadIssuer = function(uri, callback) {
+		downloadIssuer(uri, callback);
+	}
+	
+	var downloadIssuer = function(uri, callback) {
 		if(uri.indexOf('https://') >= 0) {
 			https.get(uri, (resp) => {
 				let data = [];
@@ -1198,13 +1343,24 @@ var openssl = function(options) {
 						callback(false, Buffer.concat(data).toString());
 					} else {
 						convertDERtoPEM(Buffer.concat(data), function(err, cert, cmd) {
-							callback(false, cert);
+							if(err) {
+								//callback(err, false);
+								convertDERPKCS7toPEM(Buffer.concat(data), function(err, cert, cmd) {
+									if(err) {
+										callback(err, false);
+									} else {
+										callback(false, cert[0]);
+									}
+								});
+							} else {
+								callback(false, cert);
+							}
 						});
 					}
 				});
 
 			}).on("error", (err) => {
-				callback(true, false);
+				callback(err, false);
 			});
 		} else {
 			http.get(uri, (resp) => {
@@ -1221,13 +1377,23 @@ var openssl = function(options) {
 						callback(false, Buffer.concat(data).toString());
 					} else {
 						convertDERtoPEM(Buffer.concat(data), function(err, cert, cmd) {
-							callback(false, cert);
+							if(err) {
+								convertDERPKCS7toPEM(Buffer.concat(data), function(err, cert, cmd) {
+									if(err) {
+										callback(err, false);
+									} else {
+										callback(false, cert[0]);
+									}
+								});
+							} else {
+								callback(false, cert);
+							}
 						});
 					}
 				});
 
 			}).on("error", (err) => {
-				callback(true, false);
+				callback(err, false);
 			});
 		}
 	}
