@@ -55,7 +55,8 @@ var csroptions = {
 			critical: true,
 			usages: [
 				'serverAuth',
-				'clientAuth'
+				'clientAuth',
+				'1.3.6.1.4.1.311.20.2.1'
 			]	
 		},
 		SANs: {
@@ -65,16 +66,16 @@ var csroptions = {
 			]
 		},
 		policies: [
-			{ policyIdentifier: '2.23.140.1.2.1' },
+		
 			{
 				policyIdentifier: '2.5.29.32.0',
 				CPS: [
-					'http://cyopki.com'
+					'https://www.slidellmemorial.org/'
 				],
 				userNotice: [{
-					explicitText: 'Some text here',
-					organization: 'CYOPKI',
-					noticeNumbers: [1, 2]
+					explicitText: 'We\'re super secure. I promise!!!!!',
+					organization: 'Slidell Memorial Hospital',
+					//noticeNumbers: [1, 2]
 				}]
 			}
 		]
@@ -82,7 +83,7 @@ var csroptions = {
 }
 
 var cacsroptions = {
-	hash: 'sha512',
+	hash: 'sha256',
 	days: 240,
 	subject: {
 		countryName: 'US',
@@ -95,7 +96,7 @@ var cacsroptions = {
 			'IT'
 		],
 		commonName: [
-			'Test CA'
+			'SMH Root Certificate Authority'
 		]
 	},
 	extensions: {
@@ -155,21 +156,22 @@ openssl.generateRSAPrivateKey(rsakeyoptions, function(err, cakey, cmd) {
 								if(err) console.log(err);
 								console.log(cmd.files.config);
 								console.log(crt);
-								/*openssl.createPKCS7(new Array(crt, cacrt), function(err, pkcs7, command) {
+								/*openssl.createPKCS7(new Array(crt, cacrt), 'pem', function(err, pkcs7, command) {
 									console.log(command);
 									console.log(pkcs7);
+									fs.writeFileSync('./download.p7b', pkcs7);
 								});*/
-								/*openssl.getCertInfo(crt, function(err, attrs, cmd) {
+								openssl.getCertInfo(crt, function(err, attrs, cmd) {
 									if(err) {
 										console.log(err);
 									} else {
 										console.log(attrs);
-										console.log(openssl.getDistinguishedName(attrs.subject));
+										//console.log(openssl.getDistinguishedName(attrs.subject));
 									}
 								});
 								
 								//console.log(cmd);
-								return;
+								/*return;
 								openssl.createPKCS12(crt, key, 'test', false, cacrt, function(err, pfx, command) {
 									if(err) {
 										//console.log(err);

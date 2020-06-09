@@ -910,7 +910,7 @@ var openssl = function(options) {
 		//console.log(chain);
 		getCertInfo(cert, function(err, certinfo, cmd) {
 			if(err) {
-				callback(err, false, cmd);
+				callback(err, false);
 			} else {
 				//certinfo.base64 = cert;
 				//console.log(certinfo);
@@ -1805,6 +1805,12 @@ var openssl = function(options) {
 									return false;
 								}
 							}
+						}
+					}
+				} else if (ext == 'customOIDs') {
+					if(options.extensions[ext]) {
+						for(var i = 0; i <= options.extensions[ext].length - 1; i++) {
+							req.push(options.extensions[ext][i].OID + '=' + options.extensions[ext][i].value);
 						}
 					}
 				} else if (ext == 'extendedKeyUsage') {

@@ -31,6 +31,12 @@ var csroptions = {
 	hash: 'sha512',
 	days: 240,
 	extensions: {
+		customOIDs: [
+			{
+				OID: '1.3.6.1.4.1.311.20.2',
+				value: 'ASN1:PRINTABLESTRING:Test Template'
+			}
+		],
 		tlsfeature: ['status_request'],
 		basicConstraints: {
 			critical: true,
@@ -81,13 +87,13 @@ var csroptions = {
 
 }
 
-var csroptions = {
+/*var csroptions = {
 	hash: 'sha256',
 	subject: {
 		countryName: 'US'
 	}
 
-}
+}*/
 
 var netcertoptions = {
 	hostname: 'barracuda1.smhplus.org',
@@ -103,9 +109,9 @@ var netcertoptions = {
 	//protocol: 'https'
 }
 
-openssl.generateConfig(csroptions, true, false, function(err, config) {
+/*openssl.generateConfig(csroptions, false, false, function(err, config) {
 	console.log(config);
-});
+});*/
 
 /*var netcertoptions = {
 	hostname: 'barracuda1.smhplus.org',
@@ -126,7 +132,8 @@ openssl.generateConfig(csroptions, true, false, function(err, config) {
 	});
 });*/
 
-/*openssl.generateECCPrivateKey(ecckeyoptions, function(err, key, cmd) {
+//openssl.generateECCPrivateKey(ecckeyoptions, function(err, key, cmd) {
+openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key, cmd) {
 	console.log(cmd);
 	openssl.generateCSR(csroptions, key, 'test', function(err, csr, cmd) {
 			if(err) {
@@ -142,7 +149,7 @@ openssl.generateConfig(csroptions, true, false, function(err, config) {
 									console.log(err);
 									console.log(cmd.files.config);
 							} else {
-									console.log(cmd.command);
+									//console.log(cmd.command);
 									console.log(crt);
 									console.log(cmd.files.config);
 							}
@@ -150,7 +157,7 @@ openssl.generateConfig(csroptions, true, false, function(err, config) {
 			}
 
 	});
-});*/
+});
 
 /*openssl.getCertFromNetwork(netcertoptions, function(err, cert, cmd) {
 	console.log(cert);
