@@ -914,7 +914,7 @@ var openssl = function(options) {
 			} else {
 				//certinfo.base64 = cert;
 				//console.log(certinfo);
-				if(certinfo.extensions && certinfo.extensions.authorityInfoAccess && certinfo.extensions.authorityInfoAccess.caIssuers[0]) {
+				if(certinfo.extensions && certinfo.extensions.authorityInfoAccess && certinfo.extensions.authorityInfoAccess.caIssuers) {
 					//console.log(certinfo.extensions.authorityInfoAccess.caIssuers[0]);
 					downloadIssuer(certinfo.extensions.authorityInfoAccess.caIssuers[0], function(err, dcert) {
 						if(err) {
