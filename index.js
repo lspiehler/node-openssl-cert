@@ -802,6 +802,8 @@ var openssl = function(options) {
 				outattrs[attr] = data[1].trim(' ');
 			} else if(attr=='Serial Number') {
 				outattrs[attr] = attrs[i+1].trim(' ');
+			} else if(attr=='Issuer') {
+				outattrs[attr] = data[1].trim(' ');
 			} else if(attr.indexOf('Public-Key') >= 0) {
 				outattrs['Public-Key'] = data[1].trim(' ').split(' ')[0].substring(1);
 			} else if(attr.indexOf('challengePassword') >= 0) {
