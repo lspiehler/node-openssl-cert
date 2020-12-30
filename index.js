@@ -947,7 +947,7 @@ var openssl = function(options) {
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 			if (err) throw err;
 			fs.writeFile(path, cert, function() {
-				cmd.push('x509 -in ' + path + ' -text -noout -fingerprint');
+				cmd.push('x509 -in ' + path + ' -text -noout -fingerprint -nameopt utf8 -utf8');
 				runOpenSSLCommand(cmd.join(), function(err, out) {
 					//console.log(out);
 					if(err) {
@@ -980,7 +980,7 @@ var openssl = function(options) {
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 			if (err) throw err;
 			fs.writeFile(path, cert, function() {
-				cmd.push('req -in ' + path + ' -text -noout');
+				cmd.push('req -in ' + path + ' -text -noout -nameopt utf8 -utf8');
 				runOpenSSLCommand(cmd.join(), function(err, out) {
 					//console.log(out);
 					if(err) {
@@ -1017,7 +1017,7 @@ var openssl = function(options) {
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 			if (err) throw err;
 			fs.writeFile(path, cert, function() {
-				cmd.push('x509 -in ' + path + ' -text -noout -fingerprint');
+				cmd.push('x509 -in ' + path + ' -text -noout -fingerprint -nameopt utf8 -utf8');
 				runOpenSSLCommand(cmd.join(), function(err, out) {
 					//console.log(out);
 					if(err) {
@@ -1040,7 +1040,7 @@ var openssl = function(options) {
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 			if (err) throw err;
 			fs.writeFile(path, cert, function() {
-				cmd.push('x509 -in ' + path + ' -text -noout');
+				cmd.push('x509 -in ' + path + ' -text -noout -nameopt utf8 -utf8');
 				runOpenSSLCommand(cmd.join(), function(err, out) {
 					if(err) {
 						callback(true,out.stderr,cmd.join());
@@ -1068,7 +1068,7 @@ var openssl = function(options) {
 			tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 				if (err) throw err;
 				fs.writeFile(path, cert, function() {
-					var cmd = ['x509 -noout -fingerprint -' + hash.toLowerCase() + ' -inform pem -in ' + path];
+					var cmd = ['x509 -noout -fingerprint -' + hash.toLowerCase() + ' -inform pem -in ' + path + ' -nameopt utf8 -utf8'];
 					runOpenSSLCommand(cmd.join(' '), function(err, out) {
 						if(err) {
 							callback(true, false, out.command.replace(path, 'cert.pem'));
@@ -1406,7 +1406,7 @@ var openssl = function(options) {
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 			if (err) throw err;
 			fs.writeFile(path, cert, function() {
-				var cmd = ['x509 -noout -in ' + path + ' -text'];
+				var cmd = ['x509 -noout -in ' + path + ' -text -nameopt utf8 -utf8'];
 				runOpenSSLCommand(cmd.join(' '), function(err, out) {
 					let uri = false;
 					if(err) {
@@ -1434,7 +1434,7 @@ var openssl = function(options) {
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 			if (err) throw err;
 			fs.writeFile(path, cert, function() {
-				var cmd = ['x509 -noout -in ' + path + ' -ocsp_uri'];
+				var cmd = ['x509 -noout -in ' + path + ' -ocsp_uri -nameopt utf8 -utf8'];
 				runOpenSSLCommand(cmd.join(' '), function(err, out) {
 					var uri = out.stdout.replace('\r\n','').replace('\n','')
 					if(err || uri == '') {
@@ -2184,7 +2184,7 @@ var openssl = function(options) {
 							tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback2) {
 								if (err) throw err;
 								fs.writeFile(csrpath, csr, function() {
-									var cmd = ['ca -config ' + config + ' -create_serial -in ' + csrpath + ' -policy signing_policy -batch -notext'];
+									var cmd = ['ca -config ' + config + ' -create_serial -in ' + csrpath + ' -policy signing_policy -batch -notext -nameopt utf8 -utf8'];
 									if(options.hasOwnProperty('subject')) {
 										if(options.subject===false || options.subject===null) {
 											cmd.push('-subj /')
@@ -2257,7 +2257,7 @@ var openssl = function(options) {
 													tmp.tmpName(function _tempNameGenerated(err, serialpath) {
 														if (err) throw err;
 														//fs.writeFile(serialpath, req.join('\r\n'), function() {
-															var cmd = ['x509 -req -in ' + csrpath + ' -days ' + options.days + ' -CA ' + capath + ' -CAkey ' + keypath + ' -extfile ' + csrconfig + ' -extensions req_ext -CAserial ' + serialpath + ' -CAcreateserial'];
+															var cmd = ['x509 -req -in ' + csrpath + ' -days ' + options.days + ' -CA ' + capath + ' -CAkey ' + keypath + ' -extfile ' + csrconfig + ' -extensions req_ext -CAserial ' + serialpath + ' -CAcreateserial -nameopt utf8 -utf8'];
 															//var cmd = ['x509 -req -in ' + csrpath + ' -days ' + options.days + ' -CA ' + capath + ' -CAkey ' + keypath + ' -extfile ' + csrconfig + ' -extensions req_ext'];
 															if(options.hash) {
 																cmd.push('-' + options.hash);
@@ -2338,7 +2338,7 @@ var openssl = function(options) {
 								tmp.file(function _tempFileCreated(err, csrconfig, fd, cleanupCallback3) {
 									if (err) throw err;
 									fs.writeFile(csrconfig, req.join('\r\n'), function() {
-										var cmd = ['req -x509 -nodes -in ' + csrpath + ' -days ' + options.days + ' -key ' + keypath + ' -config ' + csrconfig + ' -extensions req_ext'];
+										var cmd = ['req -x509 -nodes -in ' + csrpath + ' -days ' + options.days + ' -key ' + keypath + ' -config ' + csrconfig + ' -extensions req_ext -nameopt utf8 -utf8'];
 										if(password) {
 											var passfile = tmp.fileSync();
 											fs.writeFileSync(passfile.name, password);
