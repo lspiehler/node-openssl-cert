@@ -947,7 +947,7 @@ var openssl = function(options) {
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 			if (err) throw err;
 			fs.writeFile(path, cert, function() {
-				cmd.push('x509 -in ' + path + ' -text -noout -fingerprint -nameopt utf8 -utf8');
+				cmd.push('x509 -in ' + path + ' -text -noout -fingerprint -nameopt utf8');
 				runOpenSSLCommand(cmd.join(), function(err, out) {
 					//console.log(out);
 					if(err) {
@@ -980,7 +980,7 @@ var openssl = function(options) {
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 			if (err) throw err;
 			fs.writeFile(path, cert, function() {
-				cmd.push('req -in ' + path + ' -text -noout -nameopt utf8 -utf8');
+				cmd.push('req -in ' + path + ' -text -noout -nameopt utf8');
 				runOpenSSLCommand(cmd.join(), function(err, out) {
 					//console.log(out);
 					if(err) {
@@ -1017,7 +1017,7 @@ var openssl = function(options) {
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 			if (err) throw err;
 			fs.writeFile(path, cert, function() {
-				cmd.push('x509 -in ' + path + ' -text -noout -fingerprint -nameopt utf8 -utf8');
+				cmd.push('x509 -in ' + path + ' -text -noout -fingerprint -nameopt utf8');
 				runOpenSSLCommand(cmd.join(), function(err, out) {
 					//console.log(out);
 					if(err) {
@@ -1040,7 +1040,7 @@ var openssl = function(options) {
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 			if (err) throw err;
 			fs.writeFile(path, cert, function() {
-				cmd.push('x509 -in ' + path + ' -text -noout -nameopt utf8 -utf8');
+				cmd.push('x509 -in ' + path + ' -text -noout -nameopt utf8');
 				runOpenSSLCommand(cmd.join(), function(err, out) {
 					if(err) {
 						callback(true,out.stderr,cmd.join());
@@ -1068,7 +1068,7 @@ var openssl = function(options) {
 			tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 				if (err) throw err;
 				fs.writeFile(path, cert, function() {
-					var cmd = ['x509 -noout -fingerprint -' + hash.toLowerCase() + ' -inform pem -in ' + path + ' -nameopt utf8 -utf8'];
+					var cmd = ['x509 -noout -fingerprint -' + hash.toLowerCase() + ' -inform pem -in ' + path + ' -nameopt utf8'];
 					runOpenSSLCommand(cmd.join(' '), function(err, out) {
 						if(err) {
 							callback(true, false, out.command.replace(path, 'cert.pem'));
@@ -1406,7 +1406,7 @@ var openssl = function(options) {
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 			if (err) throw err;
 			fs.writeFile(path, cert, function() {
-				var cmd = ['x509 -noout -in ' + path + ' -text -nameopt utf8 -utf8'];
+				var cmd = ['x509 -noout -in ' + path + ' -text -nameopt utf8'];
 				runOpenSSLCommand(cmd.join(' '), function(err, out) {
 					let uri = false;
 					if(err) {
@@ -1434,7 +1434,7 @@ var openssl = function(options) {
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 			if (err) throw err;
 			fs.writeFile(path, cert, function() {
-				var cmd = ['x509 -noout -in ' + path + ' -ocsp_uri -nameopt utf8 -utf8'];
+				var cmd = ['x509 -noout -in ' + path + ' -ocsp_uri -nameopt utf8'];
 				runOpenSSLCommand(cmd.join(' '), function(err, out) {
 					var uri = out.stdout.replace('\r\n','').replace('\n','')
 					if(err || uri == '') {
