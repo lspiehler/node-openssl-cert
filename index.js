@@ -2184,7 +2184,7 @@ var openssl = function(options) {
 							tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback2) {
 								if (err) throw err;
 								fs.writeFile(csrpath, csr, function() {
-									var cmd = ['ca -config ' + config + ' -create_serial -in ' + csrpath + ' -policy signing_policy -batch -notext -nameopt utf8 -utf8'];
+									var cmd = ['ca -config ' + config + ' -create_serial -in ' + csrpath + ' -policy signing_policy -batch -notext -utf8'];
 									if(options.hasOwnProperty('subject')) {
 										if(options.subject===false || options.subject===null) {
 											cmd.push('-subj /')
@@ -2257,7 +2257,7 @@ var openssl = function(options) {
 													tmp.tmpName(function _tempNameGenerated(err, serialpath) {
 														if (err) throw err;
 														//fs.writeFile(serialpath, req.join('\r\n'), function() {
-															var cmd = ['x509 -req -in ' + csrpath + ' -days ' + options.days + ' -CA ' + capath + ' -CAkey ' + keypath + ' -extfile ' + csrconfig + ' -extensions req_ext -CAserial ' + serialpath + ' -CAcreateserial -nameopt utf8 -utf8'];
+															var cmd = ['x509 -req -in ' + csrpath + ' -days ' + options.days + ' -CA ' + capath + ' -CAkey ' + keypath + ' -extfile ' + csrconfig + ' -extensions req_ext -CAserial ' + serialpath + ' -CAcreateserial -nameopt utf8'];
 															//var cmd = ['x509 -req -in ' + csrpath + ' -days ' + options.days + ' -CA ' + capath + ' -CAkey ' + keypath + ' -extfile ' + csrconfig + ' -extensions req_ext'];
 															if(options.hash) {
 																cmd.push('-' + options.hash);
