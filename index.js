@@ -2395,7 +2395,7 @@ var openssl = function(options) {
 						tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback2) {
 							if (err) throw err;
 							fs.writeFile(csrpath, req.join('\r\n'), function() {
-								var cmd = ['req -new -nodes -key ' + keypath + ' -config ' + csrpath];
+								var cmd = ['req -new -nodes -key ' + keypath + ' -config ' + csrpath + ' -nameopt utf8 -utf8'];
 								//allows openssl to have a blank subject
 								if(!options.subject) {
 									cmd.push('-subj /')
