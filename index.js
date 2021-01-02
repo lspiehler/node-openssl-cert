@@ -1934,14 +1934,14 @@ var openssl = function(options) {
 					}
 				} else if (ext == 'authorityInfoAccess') {
 					let aiaconfig = [];
-					if(options.extensions[ext]['caIssuers']) {
-						for(var i = 0; i <= options.extensions[ext]['caIssuers'].length - 1; i++) {
-							aiaconfig.push('caIssuers;URI.' + i + ' = ' + options.extensions[ext]['caIssuers'][i]);
-						}
-					}
 					if(options.extensions[ext]['OCSP']) {
 						for(var i = 0; i <= options.extensions[ext]['OCSP'].length - 1; i++) {
 							aiaconfig.push('OCSP;URI.' + i + ' = ' + options.extensions[ext]['OCSP'][i]);
+						}
+					}
+					if(options.extensions[ext]['caIssuers']) {
+						for(var i = 0; i <= options.extensions[ext]['caIssuers'].length - 1; i++) {
+							aiaconfig.push('caIssuers;URI.' + i + ' = ' + options.extensions[ext]['caIssuers'][i]);
 						}
 					}
 					if(aiaconfig.length > 0) {
