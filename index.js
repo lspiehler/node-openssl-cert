@@ -2545,7 +2545,7 @@ var openssl = function(options) {
 						if(err) {
 							callback(err, false);
 						} else {
-							let cmd = ['ec -' + cipher + ' -in ' + path + ' -passout file:' + passresp.path];
+							let cmd = ['ec -' + cipher + ' -in ' + path + ' -passin pass:FAKE -passout file:' + passresp.path];
 							runOpenSSLCommand(cmd.join(' '), function(err, out1) {
 								cleanupCallback()
 								passresp.cleanupCallback()
@@ -2580,7 +2580,7 @@ var openssl = function(options) {
 						if(err) {
 							callback(err, false);
 						} else {
-							let cmd = ['rsa -' + cipher + ' -in ' + path + ' -passout file:' + passresp.path];
+							let cmd = ['rsa -' + cipher + ' -in ' + path + ' -passin pass:FAKE -passout file:' + passresp.path];
 							runOpenSSLCommand(cmd.join(' '), function(err, out1) {
 								cleanupCallback()
 								passresp.cleanupCallback()
