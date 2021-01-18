@@ -1158,6 +1158,7 @@ var openssl = function(options) {
 					passcmd = '-passin file:' + passfile.name;
 				}
 				var cmd = ['rsa ' + passcmd + ' -in ' + path];
+				//console.log(cmd.join(' '))
 				runOpenSSLCommand(cmd.join(' '), function(err, out) {
 					if(err) {
 						cmd.push('-inform DER');
@@ -2531,7 +2532,7 @@ var openssl = function(options) {
 				}
 			});
 		} else {
-			callback(err, {path: false, password: false, cleanupCallback: false});
+			callback(false, {path: false, password: false, cleanupCallback: false});
 		}
 	}
 	
@@ -2570,7 +2571,7 @@ var openssl = function(options) {
 		});
 	}
 	
-	this.checkRSAMatch = function(key, cert, callback) {
+	this.checkRSAMatch = function(key, keypass, cert, callback) {
 		tmp.file(function _tempFileCreated(err, keypath, fd, cleanupCallback1) {
 			if(err) {
 				callback(err, false);
@@ -2587,27 +2588,43 @@ var openssl = function(options) {
 									if(err) {
 										callback(err, false);
 									} else {
-										let cmd = ['rsa -in ' + keypath + ' -pubout'];
-										runOpenSSLCommand(cmd.join(' '), function(err, out1) {
-											cleanupCallback1()
+										writePassword(keypass, function(err, passresp) {
 											if(err) {
 												callback(err, false);
 											} else {
-												let cmd = ['x509 -in ' + certpath + ' -noout -pubkey'];
-												runOpenSSLCommand(cmd.join(' '), function(err, out2) {
-													cleanupCallback2()
+												let passcmd;
+												if(keypass) {
+													passcmd = '-passin file:' + passresp.path;
+												} else {
+													passcmd = '-passin pass:_PLAIN_';
+												}
+												let cmd = ['rsa ' + passcmd + ' -in ' + keypath + ' -pubout'];
+												//console.log(cmd.join(' '));
+												runOpenSSLCommand(cmd.join(' '), function(err, out1) {
+													if(keypass) {
+														passresp.cleanupCallback()
+													}
+													cleanupCallback1()
 													if(err) {
 														callback(err, false);
 													} else {
-														let key = crypto.createHash('sha256').update(out1.stdout).digest('hex');
-														let cert = crypto.createHash('sha256').update(out2.stdout).digest('hex');
-														//console.log(out1.stdout);
-														//console.log(out2.stdout);
-														if(key===cert) {
-															callback(false, true);
-														} else {
-															callback(false, false);
-														}
+														let cmd = ['x509 -in ' + certpath + ' -noout -pubkey'];
+														runOpenSSLCommand(cmd.join(' '), function(err, out2) {
+															cleanupCallback2()
+															if(err) {
+																callback(err, false);
+															} else {
+																let key = crypto.createHash('sha256').update(out1.stdout).digest('hex');
+																let cert = crypto.createHash('sha256').update(out2.stdout).digest('hex');
+																//console.log(out1.stdout);
+																//console.log(out2.stdout);
+																if(key===cert) {
+																	callback(false, true);
+																} else {
+																	callback(false, false);
+																}
+															}
+														});
 													}
 												});
 											}
@@ -2622,7 +2639,7 @@ var openssl = function(options) {
 		});
 	}
 	
-	this.checkECCMatch = function(key, cert, callback) {
+	this.checkECCMatch = function(key, keypass, cert, callback) {
 		tmp.file(function _tempFileCreated(err, keypath, fd, cleanupCallback1) {
 			if(err) {
 				callback(err, false);
@@ -2639,27 +2656,43 @@ var openssl = function(options) {
 									if(err) {
 										callback(err, false);
 									} else {
-										let cmd = ['ec -in ' + keypath + ' -pubout'];
-										runOpenSSLCommand(cmd.join(' '), function(err, out1) {
-											cleanupCallback1()
+										writePassword(keypass, function(err, passresp) {
 											if(err) {
 												callback(err, false);
 											} else {
-												let cmd = ['x509 -in ' + certpath + ' -noout -pubkey'];
-												runOpenSSLCommand(cmd.join(' '), function(err, out2) {
-													cleanupCallback2()
+												let passcmd;
+												if(keypass) {
+													passcmd = '-passin file:' + passresp.path;
+												} else {
+													passcmd = '-passin pass:_PLAIN_';
+												}
+												let cmd = ['ec ' + passcmd + ' -in ' + keypath + ' -pubout'];
+												//console.log(cmd.join(' '));
+												runOpenSSLCommand(cmd.join(' '), function(err, out1) {
+													if(keypass) {
+														passresp.cleanupCallback()
+													}
+													cleanupCallback1()
 													if(err) {
 														callback(err, false);
 													} else {
-														let key = crypto.createHash('sha256').update(out1.stdout).digest('hex');
-														let cert = crypto.createHash('sha256').update(out2.stdout).digest('hex');
-														//console.log(out1.stdout);
-														//console.log(out2.stdout);
-														if(key===cert) {
-															callback(false, true);
-														} else {
-															callback(false, false);
-														}
+														let cmd = ['x509 -in ' + certpath + ' -noout -pubkey'];
+														runOpenSSLCommand(cmd.join(' '), function(err, out2) {
+															cleanupCallback2()
+															if(err) {
+																callback(err, false);
+															} else {
+																let key = crypto.createHash('sha256').update(out1.stdout).digest('hex');
+																let cert = crypto.createHash('sha256').update(out2.stdout).digest('hex');
+																//console.log(out1.stdout);
+																//console.log(out2.stdout);
+																if(key===cert) {
+																	callback(false, true);
+																} else {
+																	callback(false, false);
+																}
+															}
+														});
 													}
 												});
 											}
