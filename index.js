@@ -5,6 +5,7 @@ const http = require('http');
 var tmp = require('tmp');
 var fs = require('fs');
 var opensslbinpath = 'openssl'; //use full path if not in system PATH
+var pkcs11toolbinpath = 'pkcs11-tool'; //use full path if not in system PATH
 const tempdir = '/tmp/';
 var moment = require('moment');
 var net = require('net');
@@ -15,6 +16,11 @@ var openssl = function(options) {
 	if(options) {
 		if(options.binpath) {
 			opensslbinpath = options.binpath;
+		} else {
+			
+		}
+		if(options.pkcs11toolbinpath) {
+			pkcs11toolbinpath = options.pkcs11toolbinpath;
 		} else {
 			
 		}
@@ -39,6 +45,60 @@ var openssl = function(options) {
 			}
 		}
 		return outcmd;
+	}
+
+	var runPKCS11ToolCommand = function(cmd, callback) {
+		const stdoutbuff = [];
+		const stderrbuff = [];
+		var terminate = false;
+		
+		if(cmd.indexOf('s_client') >= 0) {
+			terminate = true;
+		}
+		
+		const pkcs11tool = spawn( pkcs11toolbinpath, normalizeCommand(cmd) );
+		
+		pkcs11tool.stdout.on('data', function(data) {
+			stdoutbuff.push(data.toString());
+			/*//pkcs11tool.stdin.setEncoding('utf-8');
+			setTimeout(function() {
+				//pkcs11tool.stdin.write("QUIT\r");
+				//console.log('QUIT\r\n');
+				//pkcs11tool.stdin.end();
+				pkcs11tool.kill();
+			}, 1000);*/
+			if(terminate) {
+				//if(data.toString().indexOf('Verify return code: 0 (ok)') >= 0 ) {
+				if(stdoutbuff.join('').toString().indexOf('Verify return code: ') >= 0 ) {
+					pkcs11tool.kill();
+				}
+			}
+		});
+
+		/*pkcs11tool.stdout.on('end', function(data) {
+			stderrbuff.push(data.toString());
+		});*/
+		
+		pkcs11tool.stderr.on('data', function(data) {
+			stderrbuff.push(data.toString());
+		});
+		
+		pkcs11tool.on('exit', function(code) {
+			if(terminate && code==null) {
+				code = 0;
+			}
+			var out = {
+				command: 'pkcs11-tool ' + cmd,
+				stdout: stdoutbuff.join(''),
+				stderr: stderrbuff.join(''),
+				exitcode: code
+			}
+			if (code != 0) {
+				callback(stderrbuff.join(), out);
+			} else {
+				callback(false, out);
+			}
+		});
 	}
 	
 	var runOpenSSLCommand = function(cmd, callback) {
@@ -2167,6 +2227,213 @@ var openssl = function(options) {
 			});
 		});
 	}
+
+	this.readPKCS11Cert = function(params, callback) {
+		tmp.file(function _tempFileCreated(err, derpath, fd, cleanupCallback) {
+			if (err) {
+				callback(err, false);
+			} else {
+				let cmd = ['--read-object --type cert --id=' + params.slotid + ' --output-file ' + derpath];
+				runPKCS11ToolCommand(cmd.join(' '), function(err, out) {
+					if(err) {
+						callback(err, false);
+					} else {
+						fs.readFile(derpath, function(err, der) {
+							cleanupCallback();
+							if(err) {
+								callback(err, false);
+							} else {
+								convertDERtoPEM(der, function(err, pem) {
+									if(err) {
+										callback(err, false);
+									} else {
+										callback(false, pem);
+									}
+								});
+							}
+						});
+					}
+				});
+			}
+		});
+	}
+
+	this.CASignCSRv2 = function(params, callback) {
+		//console.log(params.csr);
+		params.options.days = typeof params.options.days !== 'undefined' ? params.options.days : 365;
+		if(params.persistcapath) {
+			generateConfig(params.options, true, params.persistcapath, function(err, req) {
+				if(err) {
+					callback(err,{
+						command: null,
+						data: null
+					});
+					return false;
+				} else {
+					tmp.file(function _tempFileCreated(err, config, fd, cleanupCallback1) {
+						if (err) throw err;
+						//correct ca path
+						var careq = [];
+						for(var i = 0; i<= req.length - 1; i++) {
+							if(req[i]=='base_dir = .') {
+								careq.push('base_dir = "' + params.persistcapath + '"');
+							} else {
+								careq.push(req[i]);
+							}
+						}
+						console.log(careq);
+						fs.writeFile(config, careq.join('\r\n'), function() {
+							tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback2) {
+								if (err) throw err;
+								fs.writeFile(csrpath, params.csr, function() {
+									var cmd = ['ca -config ' + config + ' -create_serial -in ' + csrpath + ' -policy signing_policy -batch -notext -utf8'];
+									if(params.options.hasOwnProperty('subject')) {
+										if(params.options.subject===false || params.options.subject===null) {
+											cmd.push('-subj /')
+										} else {
+											cmd.push('-subj ' + getDistinguishedName(params.options.subject));
+										}
+									}
+									if(params.options.startdate) {
+										cmd.push('-startdate ' + moment(params.options.startdate).format('YYYYMMDDHHmmss') + 'Z -enddate ' + moment(params.options.enddate).format('YYYYMMDDHHmmss') + 'Z');
+									} else {
+										cmd.push('-days ' + params.options.days);
+									}
+									if(params.password) {
+										var passfile = tmp.fileSync();
+										fs.writeFileSync(passfile.name, params.password);
+										cmd.push('-passin file:' + passfile.name);
+									}
+									if(params.hasOwnProperty('pkcs11')) {
+										if(params.pkcs11===false || params.pkcs11===null) {
+											//cmd.push('-subj /')
+										} else {
+											cmd.push('-engine pkcs11 -keyform engine -keyfile ' + params.pkcs11.slotid + ' -passin pass:' + params.pkcs11.pin );
+										}
+									}
+									runOpenSSLCommand(cmd.join(' '), function(err, out) {
+										if(err) {
+											callback(err, out.stdout, {
+												command: [out.command.replace(config, 'config.txt').replace(csrpath, 'cert.csr')],
+												files: {
+													config: req.join('\r\n')
+												}
+											});
+										} else {
+											fs.readFile(params.persistcapath + '/serial.txt', function(err, serial) {
+												callback(false, out.stdout, {
+													command: [out.command.replace(config, 'config.txt').replace(csrpath, 'cert.csr')],
+													serial: serial.toString().replace('\r\n', '').replace('\n', ''),
+													files: {
+														config: req.join('\r\n')
+													}
+												});
+											});
+										}
+										if(params.password) {
+											passfile.removeCallback();
+										}
+										cleanupCallback1();
+										cleanupCallback2();
+									});
+								});
+							});
+						});
+					});
+				}
+			});
+		} else {
+			generateConfig(params.options, true, false, function(err, req) {
+				if(err) {
+					callback(err,{
+						command: null,
+						data: null
+					});
+					return false;
+				} else {
+					tmp.file(function _tempFileCreated(err, capath, fd, cleanupCallback1) {
+						if (err) throw err;
+						fs.writeFile(capath, params.ca, function() {
+							tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback2) {
+								if (err) throw err;
+								fs.writeFile(csrpath, params.csr, function() {
+									tmp.file(function _tempFileCreated(err, keypath, fd, cleanupCallback3) {
+										if (err) throw err;
+										fs.writeFile(keypath, params.key, function() {
+											tmp.file(function _tempFileCreated(err, csrconfig, fd, cleanupCallback4) {
+												if (err) throw err;
+												fs.writeFile(csrconfig, req.join('\r\n'), function() {
+													tmp.tmpName(function _tempNameGenerated(err, serialpath) {
+														if (err) throw err;
+														//fs.writeFile(serialpath, req.join('\r\n'), function() {
+															var cmd = ['x509 -req -in ' + csrpath + ' -days ' + params.options.days + ' -CA ' + capath + ' -CAkey ' + keypath + ' -extfile ' + csrconfig + ' -extensions req_ext -CAserial ' + serialpath + ' -CAcreateserial -nameopt utf8'];
+															//var cmd = ['x509 -req -in ' + csrpath + ' -days ' + params.options.days + ' -CA ' + capath + ' -CAkey ' + keypath + ' -extfile ' + csrconfig + ' -extensions req_ext'];
+															if(params.options.hash) {
+																cmd.push('-' + params.options.hash);
+															}
+															if(params.password) {
+																var passfile = tmp.fileSync();
+																fs.writeFileSync(passfile.name, params.password);
+																cmd.push('-passin file:' + passfile.name);
+															}
+															if(params.hasOwnProperty('pkcs11')) {
+																if(params.pkcs11===false || params.pkcs11===null) {
+																	//cmd.push('-subj /')
+																} else {
+																	cmd.push('-engine pkcs11 -CAkeyform engine -CAkey ' + params.pkcs11.slotid + ' -passin pass:' + params.pkcs11.pin );
+																}
+															}
+													
+													//console.log(cmd);
+													
+															runOpenSSLCommand(cmd.join(' '), function(err, out) {
+																if(err) {
+																	callback(err, out.stdout, {
+																		command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'cert.csr').replace(capath, 'ca.crt').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
+																		files: {
+																			config: req.join('\r\n')
+																		}
+																	});
+																} else {
+																	fs.readFile(serialpath, function(err, serial) {
+																		
+																		fs.unlink(serialpath, function(err) {
+																			//delete temp serial file
+																		});
+																		
+																		callback(false, out.stdout, {
+																			command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'cert.csr').replace(capath, 'ca.crt').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
+																			serial: serial.toString().replace('\r\n', '').replace('\n', ''),
+																			files: {
+																				config: req.join('\r\n')
+																			}
+																		});
+																	});
+																}
+																if(params.password) {
+																	passfile.removeCallback();
+																}
+																cleanupCallback1();
+																cleanupCallback2();
+																cleanupCallback3();
+																cleanupCallback4();
+																//cleanupCallback5();
+															//});
+														});
+													});
+												});
+											});
+										});
+									});
+								});
+							});
+						});
+					});
+				}
+			});
+		}
+	}
+
 	
 	this.CASignCSR = function(csr, options, persistcapath, ca, key, password, callback) {
 		//console.log(csr);
