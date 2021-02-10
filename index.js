@@ -2228,6 +2228,45 @@ var openssl = function(options) {
 		});
 	}
 
+	this.listSlots = function(callback) {
+		let slots = []
+		let cmd = ['--list-slots'];
+		runPKCS11ToolCommand(cmd.join(' '), function(err, out) {
+			if(err) {
+				callback(err, false);
+			} else {
+				let slot = {};
+				let slotsexist = false;
+				let lines = out.stdout.split('\n');
+				for(let i = 1; i <= lines.length - 2; i++) {
+					if(lines[i].indexOf('Slot') == 0) {
+						if(slotsexist) {
+							slots.push(slot);
+							slot = {}
+						}
+						slotsexist = true;
+						slot.id = lines[i].substring(5, 6);
+						slot.hex = lines[i].split('): ')[0].substring(8);
+						slot.name = lines[i].split('): ')[1]
+						console.log(slot);
+					} else {
+						let kvp = lines[i].split(' : ');
+						if(kvp[0].trim()=='token flags') {
+							slot[kvp[0].trim()] = kvp[1].split(', ');
+						} else {
+							slot[kvp[0].trim()] = kvp[1]
+						}
+						//console.log(kvp);
+					}
+				}
+				if(slotsexist) {
+					slots.push(slot);
+				}
+				callback(false, slots);
+			}
+		});
+	}
+
 	this.readPKCS11Cert = function(params, callback) {
 		tmp.file(function _tempFileCreated(err, derpath, fd, cleanupCallback) {
 			if (err) {
@@ -2281,7 +2320,7 @@ var openssl = function(options) {
 								careq.push(req[i]);
 							}
 						}
-						console.log(careq);
+						//console.log(careq);
 						fs.writeFile(config, careq.join('\r\n'), function() {
 							tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback2) {
 								if (err) throw err;
