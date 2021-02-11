@@ -2245,10 +2245,11 @@ var openssl = function(options) {
 							slot = {}
 						}
 						slotsexist = true;
-						slot.id = lines[i].substring(5, 6);
+						//slot.id = lines[i].substring(5, 6);
+						slot.id = parseInt(lines[i].split('): ')[0].substring(8), 16);
 						slot.hex = lines[i].split('): ')[0].substring(8);
 						slot.name = lines[i].split('): ')[1]
-						console.log(slot);
+						//console.log(slot);
 					} else {
 						let kvp = lines[i].split(' : ');
 						if(kvp[0].trim()=='token flags') {
@@ -2270,23 +2271,23 @@ var openssl = function(options) {
 	this.readPKCS11Cert = function(params, callback) {
 		tmp.file(function _tempFileCreated(err, derpath, fd, cleanupCallback) {
 			if (err) {
-				callback(err, false);
+				callback(err, false, false);
 			} else {
-				let cmd = ['--read-object --type cert --id=' + params.slotid + ' --output-file ' + derpath];
+				let cmd = ['--read-object --type cert --id=' + params.id + ' --slot=' + params.slot + ' --output-file ' + derpath];
 				runPKCS11ToolCommand(cmd.join(' '), function(err, out) {
 					if(err) {
-						callback(err, false);
+						callback(err, false, out);
 					} else {
 						fs.readFile(derpath, function(err, der) {
 							cleanupCallback();
 							if(err) {
-								callback(err, false);
+								callback(err, false, out);
 							} else {
 								convertDERtoPEM(der, function(err, pem) {
 									if(err) {
-										callback(err, false);
+										callback(err, false, out);
 									} else {
-										callback(false, pem);
+										callback(false, pem, out);
 									}
 								});
 							}
