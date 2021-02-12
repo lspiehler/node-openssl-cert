@@ -2228,9 +2228,14 @@ var openssl = function(options) {
 		});
 	}
 
-	this.listSlots = function(callback) {
+	this.listSlots = function(params, callback) {
 		let slots = []
 		let cmd = ['--list-slots'];
+		if(params) {
+			if(params.modulePath) {
+				cmd.push('--module ' + params.modulePath);
+			}
+		}
 		runPKCS11ToolCommand(cmd.join(' '), function(err, out) {
 			if(err) {
 				callback(err, false);
