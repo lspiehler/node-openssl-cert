@@ -1367,6 +1367,50 @@ var openssl = function(options) {
 			});
 		});
 	}
+
+	var convertRSADERtoPEM = function(pubkey, callback) {
+		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
+			if (err) throw err;
+			fs.writeFile(path, pubkey, function() {
+				var cmd = ['rsa -pubin -pubout -inform DER -outform PEM -in ' + path];
+				runOpenSSLCommand(cmd.join(' '), function(err, out) {
+					//console.log(out);
+					if(err) {
+						callback(true, false, out.command.replace(path, 'pubkey.pem'));
+					} else {
+						callback(false, out.stdout, out.command.replace(path, 'pubkey.pem'));
+					}
+					cleanupCallback1();
+				});
+			});
+		});
+	}
+	
+	this.convertRSADERtoPEM = function(pubkey, callback) {
+		convertRSADERtoPEM(pubkey, callback);
+	}
+
+	var convertECCDERtoPEM = function(pubkey, callback) {
+		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
+			if (err) throw err;
+			fs.writeFile(path, pubkey, function() {
+				var cmd = ['ec -pubin -pubout -inform DER -outform PEM -in ' + path];
+				runOpenSSLCommand(cmd.join(' '), function(err, out) {
+					//console.log(out);
+					if(err) {
+						callback(true, false, out.command.replace(path, 'pubkey.pem'));
+					} else {
+						callback(false, out.stdout, out.command.replace(path, 'pubkey.pem'));
+					}
+					cleanupCallback1();
+				});
+			});
+		});
+	}
+	
+	this.convertECCDERtoPEM = function(pubkey, callback) {
+		convertECCDERtoPEM(pubkey, callback);
+	}
 	
 	var convertDERtoPEM = function(cert, callback) {
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
@@ -2228,7 +2272,7 @@ var openssl = function(options) {
 		});
 	}
 
-	this.listSlots = function(params, callback) {
+	this.listPKCS11Slots = function(params, callback) {
 		let slots = []
 		let cmd = ['--list-slots'];
 		if(params) {
@@ -2238,7 +2282,7 @@ var openssl = function(options) {
 		}
 		runPKCS11ToolCommand(cmd.join(' '), function(err, out) {
 			if(err) {
-				callback(err, false);
+				callback(err, false, out);
 			} else {
 				let slot = {};
 				let slotsexist = false;
@@ -2252,15 +2296,15 @@ var openssl = function(options) {
 						slotsexist = true;
 						//slot.id = lines[i].substring(5, 6);
 						slot.id = parseInt(lines[i].split('): ')[0].substring(8), 16);
-						slot.hex = lines[i].split('): ')[0].substring(8);
+						slot.hexid = lines[i].split('): ')[0].substring(8);
 						slot.name = lines[i].split('): ')[1]
 						//console.log(slot);
 					} else {
-						let kvp = lines[i].split(' : ');
+						let kvp = lines[i].split(':');
 						if(kvp[0].trim()=='token flags') {
-							slot[kvp[0].trim()] = kvp[1].split(', ');
+							slot[kvp.shift().trim()] = kvp.join(':').trim().split(', ');
 						} else {
-							slot[kvp[0].trim()] = kvp[1]
+							slot[kvp.shift().trim()] = kvp.join(':').trim();
 						}
 						//console.log(kvp);
 					}
@@ -2268,17 +2312,86 @@ var openssl = function(options) {
 				if(slotsexist) {
 					slots.push(slot);
 				}
-				callback(false, slots);
+				callback(false, slots, out);
 			}
 		});
 	}
 
-	this.readPKCS11Cert = function(params, callback) {
+	this.listPKCS11Objects = function(params, callback) {
+		let objects = []
+		let cmd = ['--list-objects'];
+		if(params) {
+			if(params.modulePath) {
+				cmd.push('--module ' + params.modulePath);
+			}
+			if(params.slotid) {
+				cmd.push('--slot ' + params.slotid);
+			}
+		}
+		runPKCS11ToolCommand(cmd.join(' '), function(err, out) {
+			if(err) {
+				callback(err, false);
+			} else {
+				let object = {};
+				let objectexist = false;
+				let interesting = false;
+				let interestingobjects = ['CERTIFICATE OBJECT', 'PUBLIC KEY OBJECT']
+				let lines = out.stdout.split('\n');
+				//console.log(lines);
+				for(let i = 0; i <= lines.length - 2; i++) {
+					//console.log(lines[i]);
+					if(lines[i][0]==' ') {
+						//console.log('property');
+						if(interesting) {
+							//console.log('pay attention');
+							let examineproperty = lines[i].split(':');
+							let key = examineproperty.shift().trim();
+							if(key.toUpperCase()=='SUBJECT') {
+								object[key] = examineproperty.join(':').replace('DN:' ,'').trim();
+							} else if(key.toUpperCase()=='USAGE') {
+								object[key] = examineproperty.join(':').trim().split(', ');
+							} else {
+								object[key] = examineproperty.join('').trim();
+							}
+						} else {
+							//console.log('ignore');
+						}
+					} else {
+						if(objectexist===true) {
+							objects.push(object);
+							object = {};
+						}
+						let examineobject = lines[i].split('; ');
+						if(interestingobjects.includes(examineobject[0].toUpperCase())) {
+							objectexist = true;
+							interesting = true;
+							//console.log(examineobject);
+							object.type = examineobject[0]
+							object.detail = examineobject[1].replace('type = ', '');
+						} else {
+							interesting = false;
+						}
+					}
+				}
+				if(objectexist) {
+					objects.push(object);
+				}
+				callback(false, objects, out);
+			}
+		});
+	}
+
+	this.readPKCS11Object = function(params, callback) {
 		tmp.file(function _tempFileCreated(err, derpath, fd, cleanupCallback) {
 			if (err) {
 				callback(err, false, false);
 			} else {
-				let cmd = ['--read-object --type cert --id=' + params.id + ' --slot=' + params.slot + ' --output-file ' + derpath];
+				let cmd = ['--read-object --type ' + params.type + ' --id=' + params.objectid + ' --slot=' + params.slotid + ' --output-file ' + derpath];
+				if(params) {
+					if(params.modulePath) {
+						cmd.push('--module ' + params.modulePath);
+					}
+				}
 				runPKCS11ToolCommand(cmd.join(' '), function(err, out) {
 					if(err) {
 						callback(err, false, out);
@@ -2288,13 +2401,33 @@ var openssl = function(options) {
 							if(err) {
 								callback(err, false, out);
 							} else {
-								convertDERtoPEM(der, function(err, pem) {
-									if(err) {
-										callback(err, false, out);
-									} else {
-										callback(false, pem, out);
-									}
-								});
+								if(params.type=='cert') {
+									convertDERtoPEM(der, function(err, pem) {
+										if(err) {
+											callback(err, false, out);
+										} else {
+											callback(false, pem, out);
+										}
+									});
+								} else if(params.type=='pubkey'){
+									convertRSADERtoPEM(der, function(err, pem) {
+										//console.log(cmd.join(' '));
+										if(err) {
+											convertECCDERtoPEM(der, function(err, pem) {
+												//console.log(cmd.join(' '));
+												if(err) {
+													callback(err, false, out);
+												} else {
+													callback(false, pem, out);
+												}
+											});
+										} else {
+											callback(false, pem, out);
+										}
+									});
+								} else {
+									callback('unrecogized type', false, false)
+								}
 							}
 						});
 					}
