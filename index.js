@@ -2298,8 +2298,8 @@ var openssl = function(options) {
 							slot = {}
 						}
 						slotsexist = true;
-						//slot.id = lines[i].substring(5, 6);
-						slot.id = parseInt(lines[i].split('): ')[0].substring(8), 16);
+						slot.id = lines[i].split(' (0x')[0].substring(5);
+						//slot.id = parseInt(lines[i].split('): ')[0].substring(8), 16);
 						slot.hexid = lines[i].split('): ')[0].substring(8);
 						slot.name = lines[i].split('): ')[1]
 						//console.log(slot);
