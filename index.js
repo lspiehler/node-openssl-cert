@@ -2282,7 +2282,11 @@ var openssl = function(options) {
 		}
 		runPKCS11ToolCommand(cmd.join(' '), function(err, out) {
 			if(err) {
-				callback(err, false, out);
+				if(out.stderr.indexOf('No slots') == 0) {
+					callback(false, [], out);
+				} else {
+					callback(err, false, out);
+				}
 			} else {
 				let slot = {};
 				let slotsexist = false;
