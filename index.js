@@ -1411,6 +1411,69 @@ var openssl = function(options) {
 	this.convertECCDERtoPEM = function(pubkey, callback) {
 		convertECCDERtoPEM(pubkey, callback);
 	}
+
+	var convertPrivPEMtoDER = function(params, callback) {
+		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
+			if (err) {
+				cleanupCallback1();
+				callback(err, false, false);
+			} else {
+				fs.writeFile(path, params.key, function() {
+					if(err) {
+						cleanupCallback1();
+						callback(err, false, false);
+					} else {
+						tmp.file(function _tempFileCreated(err, derpath, fd, cleanupCallback2) {
+							if(err) {
+								cleanupCallback1();
+								cleanupCallback2();
+								callback(err, false, false);
+							} else {
+								writePassword(params.password, function(err, passresp) {
+									if(err) {
+										callback(err, false);
+									} else {
+										let passcmd;
+										if(params.password) {
+											passcmd = '-passin file:' + passresp.path;
+										} else {
+											passcmd = '-passin pass:_PLAIN_';
+										}
+										var cmd = [params.type + ' -inform PEM ' + passcmd + ' -outform DER -in ' + path + ' -out ' + derpath];
+										runOpenSSLCommand(cmd.join(' '), function(err, out) {
+											//console.log(out);
+											if(params.password) {
+												passresp.cleanupCallback();
+											}
+											if(err) {
+												cleanupCallback1();
+												cleanupCallback2();
+												callback(err, false, out.command.replace(path, 'key.pem').replace(derpath, 'key.der'));
+											} else {
+												fs.readFile(derpath, function(err, data) {
+													cleanupCallback1();
+													cleanupCallback2();
+													if(err) {
+														callback(err, false, out.command.replace(path, 'key.pem').replace(derpath, 'key.der'));
+													} else {
+														callback(false, data, out.command.replace(path, 'key.pem').replace(derpath, 'key.der'));
+													}
+												});
+											}
+										});
+									}
+								});
+							}
+						});
+					}
+				});
+			}
+		});
+	}
+	
+	this.convertPrivPEMtoDER = function(pubkey, callback) {
+		convertPrivPEMtoDER(pubkey, callback);
+	}
 	
 	var convertDERtoPEM = function(cert, callback) {
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
