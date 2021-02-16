@@ -1876,6 +1876,21 @@ var openssl = function(options) {
 			'otherName'
 		];
 		var req = [];
+
+		if(options.hasOwnProperty('module')) {
+			if(options.module) {
+				req.push('openssl_conf = openssl_def');
+				req.push('[openssl_def]');
+				req.push('engines = engine_section');
+				req.push('[engine_section]');
+				req.push('pkcs11 = pkcs11_section');
+				req.push('[pkcs11_section]');
+				req.push('engine_id = pkcs11');
+				req.push('#dynamic_path = /usr/lib/x86_64-linux-gnu/engines-1.1/pkcs11.so');
+				req.push('MODULE_PATH = ' + options.module);
+				req.push('init = 0');
+			}
+		}
 		
 		if(persistentca) {
 			req.push('[ ca ]');
@@ -2902,6 +2917,82 @@ var openssl = function(options) {
 			}
 		});
 	}
+
+	this.selfSignCSRv2 = function(params, callback) {
+		//console.log(csr);
+		params.options.days = typeof params.options.days !== 'undefined' ? params.options.days : 365;
+		generateConfig(params.options, true, false, function(err, req) {
+			if(err) {
+				callback(err,{
+					command: null,
+					data: null
+				});
+				return false;
+			} else {
+				tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback1) {
+					if (err) throw err;
+					fs.writeFile(csrpath, params.csr, function() {
+						tmp.file(function _tempFileCreated(err, keypath, fd, cleanupCallback2) {
+							if (err) throw err;
+							fs.writeFile(keypath, params.key, function() {
+								tmp.file(function _tempFileCreated(err, csrconfig, fd, cleanupCallback3) {
+									if (err) throw err;
+									fs.writeFile(csrconfig, req.join('\r\n'), function() {
+										var cmd = ['req -x509 -nodes -days ' + params.options.days + ' -config ' + csrconfig + ' -extensions req_ext -nameopt utf8 -utf8'];
+										if(params.hasOwnProperty('pkcs11')) {
+											if(params.pkcs11===false || params.pkcs11===null) {
+												cmd.push('-key ' + keypath);
+											} else {
+												cmd.push('-engine pkcs11 -keyform engine -key pkcs11:serial=' + params.pkcs11.serial + ';id=%' + params.pkcs11.slotid + ' -passin pass:' + params.pkcs11.pin );
+											}
+										} else {
+											cmd.push('-key ' + keypath);
+										}
+										if(params.password) {
+											var passfile = tmp.fileSync();
+											fs.writeFileSync(passfile.name, params.password);
+											cmd.push('-passin file:' + passfile.name);
+										}
+										if(params.csr) {
+											cmd.push('-in ' + csrpath);
+										} else {
+											cmd.push('-new');
+										}
+								
+								//console.log(cmd);
+								
+										runOpenSSLCommand(cmd.join(' '), function(err, out) {
+											if(err) {
+												callback(err, out.stdout, {
+													command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'cert.csr').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
+													files: {
+														config: req.join('\r\n')
+													}
+												});
+											} else {
+												callback(false, out.stdout, {
+													command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'cert.csr').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
+													files: {
+														config: req.join('\r\n')
+													}
+												});
+											}
+											if(params.password) {
+												passfile.removeCallback();
+											}
+											cleanupCallback1();
+											cleanupCallback2();
+											cleanupCallback3();
+										});
+									});
+								});
+							});
+						});
+					});
+				});	
+			}
+		});
+	}
 	
 	this.generateCSR = function(options, key, password, callback) {
 		generateConfig(options, false, false, function(err, req) {
@@ -2948,6 +3039,73 @@ var openssl = function(options) {
 										});
 									}
 									if(password) {
+										passfile.removeCallback();
+									}
+									cleanupCallback1();
+									cleanupCallback2();
+								});
+							});
+						});
+					});
+				});
+			}
+		});
+	}
+
+	this.generateCSRv2 = function(params, callback) {
+		generateConfig(params.options, false, false, function(err, req) {
+			if(err) {
+				callback(err,{
+					command: null,
+					data: null
+				});
+				return false;
+			} else {
+				tmp.file(function _tempFileCreated(err, keypath, fd, cleanupCallback1) {
+					if (err) throw err;
+					fs.writeFile(keypath, params.key, function() {
+						tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback2) {
+							if (err) throw err;
+							fs.writeFile(csrpath, req.join('\r\n'), function() {
+								var cmd = ['req -new -nodes -config ' + csrpath + ' -nameopt utf8 -utf8'];
+								if(params.hasOwnProperty('pkcs11')) {
+									if(params.pkcs11===false || params.pkcs11===null) {
+										cmd.push('-key ' + keypath);
+									} else {
+										cmd.push('-engine pkcs11 -keyform engine -key pkcs11:serial=' + params.pkcs11.serial + ';id=%' + params.pkcs11.slotid + ' -passin pass:' + params.pkcs11.pin );
+									}
+								} else {
+									cmd.push('-key ' + keypath);
+								}
+								//allows openssl to have a blank subject
+								if(!params.options.subject) {
+									cmd.push('-subj /')
+								}
+								if(params.password) {
+									var passfile = tmp.fileSync();
+									fs.writeFileSync(passfile.name, params.password);
+									cmd.push('-passin file:' + passfile.name);
+								}
+						
+						//console.log(cmd);
+						
+								runOpenSSLCommand(cmd.join(' '), function(err, out) {
+									if(err) {
+										callback(err, out.stdout, {
+											command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'csrconfig.txt') + ' -out cert.csr'],
+											files: {
+												config: req.join('\r\n')
+											}
+										});
+									} else {
+										callback(false, out.stdout, {
+											command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'csrconfig.txt') + ' -out cert.csr'],
+											files: {
+												config: req.join('\r\n')
+											}
+										});
+									}
+									if(params.password) {
 										passfile.removeCallback();
 									}
 									cleanupCallback1();
