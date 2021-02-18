@@ -2568,7 +2568,7 @@ var openssl = function(options) {
 										if(params.pkcs11===false || params.pkcs11===null) {
 											//cmd.push('-subj /')
 										} else {
-											cmd.push('-engine pkcs11 -keyform engine -keyfile ' + params.pkcs11.slotid + ' -passin pass:' + params.pkcs11.pin );
+											cmd.push('-engine pkcs11 -keyform engine -keyfile pkcs11:serial=' + params.pkcs11.serial + ';id=%' + params.pkcs11.slotid + ' -passin pass:' + params.pkcs11.pin );
 										}
 									}
 									runOpenSSLCommand(cmd.join(' '), function(err, out) {
@@ -2626,7 +2626,7 @@ var openssl = function(options) {
 													tmp.tmpName(function _tempNameGenerated(err, serialpath) {
 														if (err) throw err;
 														//fs.writeFile(serialpath, req.join('\r\n'), function() {
-															var cmd = ['x509 -req -in ' + csrpath + ' -days ' + params.options.days + ' -CA ' + capath + ' -CAkey ' + keypath + ' -extfile ' + csrconfig + ' -extensions req_ext -CAserial ' + serialpath + ' -CAcreateserial -nameopt utf8'];
+															var cmd = ['x509 -req -in ' + csrpath + ' -days ' + params.options.days + ' -CA ' + capath + ' -extfile ' + csrconfig + ' -extensions req_ext -CAserial ' + serialpath + ' -CAcreateserial -nameopt utf8'];
 															//var cmd = ['x509 -req -in ' + csrpath + ' -days ' + params.options.days + ' -CA ' + capath + ' -CAkey ' + keypath + ' -extfile ' + csrconfig + ' -extensions req_ext'];
 															if(params.options.hash) {
 																cmd.push('-' + params.options.hash);
@@ -2638,10 +2638,12 @@ var openssl = function(options) {
 															}
 															if(params.hasOwnProperty('pkcs11')) {
 																if(params.pkcs11===false || params.pkcs11===null) {
-																	//cmd.push('-subj /')
+																	cmd.push('-CAkey ' + keypath);
 																} else {
-																	cmd.push('-engine pkcs11 -CAkeyform engine -CAkey ' + params.pkcs11.slotid + ' -passin pass:' + params.pkcs11.pin );
+																	cmd.push('-engine pkcs11 -CAkeyform engine -CAkey pkcs11:serial=' + params.pkcs11.serial + ';id=%' + params.pkcs11.slotid + ';type=private -passin pass:' + params.pkcs11.pin );
 																}
+															} else {
+																cmd.push('-CAkey ' + keypath);
 															}
 													
 													//console.log(cmd);
