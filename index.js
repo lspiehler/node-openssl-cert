@@ -3117,6 +3117,7 @@ var openssl = function(options) {
 	}
 
 	this.generateCSRv2 = function(params, callback) {
+		var password = 'fakepassword';
 		generateConfig(params.options, false, false, function(err, req) {
 			if(err) {
 				callback(err,{
@@ -3131,12 +3132,13 @@ var openssl = function(options) {
 						tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback2) {
 							if (err) throw err;
 							fs.writeFile(csrpath, req.join('\r\n'), function() {
-								var cmd = ['req -new -nodes -config ' + csrpath + ' -nameopt utf8 -utf8'];
+								var cmd = ['req -new -nodes -config ' + csrpath + ' -nameopt utf8 -utf8 -passin stdin'];
 								if(params.hasOwnProperty('pkcs11')) {
 									if(params.pkcs11===false || params.pkcs11===null) {
 										cmd.push('-key ' + keypath);
 									} else {
-										cmd.push('-engine pkcs11 -keyform engine -key pkcs11:serial=' + params.pkcs11.serial + ';id=%' + params.pkcs11.slotid + ' -passin pass:' + params.pkcs11.pin );
+										password = params.pkcs11.pin;
+										cmd.push('-engine pkcs11 -keyform engine -key pkcs11:serial=' + params.pkcs11.serial + ';id=%' + params.pkcs11.slotid);
 									}
 								} else {
 									cmd.push('-key ' + keypath);
@@ -3146,14 +3148,12 @@ var openssl = function(options) {
 									cmd.push('-subj /')
 								}
 								if(params.password) {
-									var passfile = tmp.fileSync();
-									fs.writeFileSync(passfile.name, params.password);
-									cmd.push('-passin file:' + passfile.name);
+									password = params.password
 								}
 						
 						//console.log(cmd);
 						
-								runOpenSSLCommand(cmd.join(' '), function(err, out) {
+								runOpenSSLCommandv2({ cmd: cmd.join(' '), stdin: password }, function(err, out) {
 									if(err) {
 										callback(err, out.stdout, {
 											command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'csrconfig.txt') + ' -out cert.csr'],
@@ -3168,9 +3168,6 @@ var openssl = function(options) {
 												config: req.join('\r\n')
 											}
 										});
-									}
-									if(params.password) {
-										passfile.removeCallback();
 									}
 									cleanupCallback1();
 									cleanupCallback2();
