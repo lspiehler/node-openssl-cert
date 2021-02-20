@@ -100,6 +100,67 @@ var openssl = function(options) {
 			}
 		});
 	}
+
+	var runOpenSSLCommandv2 = function(params, callback) {
+		const stdoutbuff = [];
+		const stderrbuff = [];
+		var terminate = false;
+		
+		if(params.cmd.indexOf('s_client') >= 0) {
+			terminate = true;
+		}
+		
+		const openssl = spawn( opensslbinpath, normalizeCommand(params.cmd) );
+
+		if(params.hasOwnProperty('stdin')) {
+			if(params.stdin) {
+				openssl.stdin.write(params.stdin);
+				openssl.stdin.end();
+			}
+		}
+		
+		openssl.stdout.on('data', function(data) {
+			stdoutbuff.push(data.toString());
+			/*//openssl.stdin.setEncoding('utf-8');
+			setTimeout(function() {
+				//openssl.stdin.write("QUIT\r");
+				//console.log('QUIT\r\n');
+				//openssl.stdin.end();
+				openssl.kill();
+			}, 1000);*/
+			if(terminate) {
+				//if(data.toString().indexOf('Verify return code: 0 (ok)') >= 0 ) {
+				if(stdoutbuff.join('').toString().indexOf('Verify return code: ') >= 0 ) {
+					openssl.kill();
+				}
+			}
+		});
+
+		/*openssl.stdout.on('end', function(data) {
+			stderrbuff.push(data.toString());
+		});*/
+		
+		openssl.stderr.on('data', function(data) {
+			stderrbuff.push(data.toString());
+		});
+		
+		openssl.on('exit', function(code) {
+			if(terminate && code==null) {
+				code = 0;
+			}
+			var out = {
+				command: 'openssl ' + params.cmd,
+				stdout: stdoutbuff.join(''),
+				stderr: stderrbuff.join(''),
+				exitcode: code
+			}
+			if (code != 0) {
+				callback(stderrbuff.join(), out);
+			} else {
+				callback(false, out);
+			}
+		});
+	}
 	
 	var runOpenSSLCommand = function(cmd, callback) {
 		const stdoutbuff = [];
@@ -2543,6 +2604,7 @@ var openssl = function(options) {
 						}
 						//console.log(careq);
 						fs.writeFile(config, careq.join('\r\n'), function() {
+							var password = false;
 							tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback2) {
 								if (err) throw err;
 								fs.writeFile(csrpath, params.csr, function() {
@@ -2560,18 +2622,18 @@ var openssl = function(options) {
 										cmd.push('-days ' + params.options.days);
 									}
 									if(params.password) {
-										var passfile = tmp.fileSync();
-										fs.writeFileSync(passfile.name, params.password);
-										cmd.push('-passin file:' + passfile.name);
+										password = params.password;
+										cmd.push('-passin stdin');
 									}
 									if(params.hasOwnProperty('pkcs11')) {
 										if(params.pkcs11===false || params.pkcs11===null) {
 											//cmd.push('-subj /')
 										} else {
-											cmd.push('-engine pkcs11 -keyform engine -keyfile pkcs11:serial=' + params.pkcs11.serial + ';id=%' + params.pkcs11.slotid + ' -passin pass:' + params.pkcs11.pin );
+											password = params.pkcs11.pin;
+											cmd.push('-engine pkcs11 -keyform engine -keyfile pkcs11:serial=' + params.pkcs11.serial + ';id=%' + params.pkcs11.slotid + ' -passin stdin' );
 										}
 									}
-									runOpenSSLCommand(cmd.join(' '), function(err, out) {
+									runOpenSSLCommandv2({ cmd: cmd.join(' '), stdin: password}, function(err, out) {
 										if(err) {
 											callback(err, out.stdout, {
 												command: [out.command.replace(config, 'config.txt').replace(csrpath, 'cert.csr')],
@@ -2648,7 +2710,7 @@ var openssl = function(options) {
 													
 													//console.log(cmd);
 													
-															runOpenSSLCommand(cmd.join(' '), function(err, out) {
+													runOpenSSLCommandv2({ cmd: cmd.join(' ') }, function(err, out) {
 																if(err) {
 																	callback(err, out.stdout, {
 																		command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'cert.csr').replace(capath, 'ca.crt').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
