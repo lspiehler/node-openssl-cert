@@ -1224,7 +1224,7 @@ var openssl = function(options) {
 						cmd.push('ocsp -issuer ' + capath + ' -' + hashalg + ' -cert ' + certpath + ' -req_text');
 						runOpenSSLCommand(cmd.join(), function(err, out) {
 							if(err) {
-								callback(true,out.stderr,cmd.join());
+								callback(err, out.stderr,cmd.join());
 							} else {
 								//console.log(out.stdout);
 								let lines = out.stdout.split('\n');
