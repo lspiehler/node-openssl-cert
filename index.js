@@ -2984,6 +2984,12 @@ var openssl = function(options) {
 
 	this.selfSignCSRv2 = function(params, callback) {
 		//console.log(csr);
+		if(!params.csr) {
+			params.csr = '';
+		}
+		if(!params.key) {
+			params.key = '';
+		}
 		params.options.days = typeof params.options.days !== 'undefined' ? params.options.days : 365;
 		generateConfig(params.options, true, false, function(err, req) {
 			if(err) {
