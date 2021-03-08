@@ -1894,6 +1894,13 @@ var openssl = function(options) {
 		const validtlsfeature = [
 			'status_request'
 		]
+		
+		const validrequestattribute = [
+			'challengePassword',
+			'challengePassword_min',
+			'challengePassword_max',
+			'unstructuredName'
+		]
 
 		const validextkeyusage = [
 			'serverAuth',
@@ -1992,6 +1999,12 @@ var openssl = function(options) {
 		req.push('[ req ]');
 		req.push('default_md = ' + options.hash);
 		req.push('prompt = no');
+		if(options.string_mask) {
+			req.push('string_mask = ' + options.string_mask);
+		}
+		if(options.requestAttributes) {
+			req.push('attributes = req_attributes');
+		}
 		if(cert || options.extensions) {
 			req.push('req_extensions = req_ext');
 		}
@@ -2033,6 +2046,22 @@ var openssl = function(options) {
 		req.push('explicitText="I can write anything I want here"');
 		req.push('organization="Organisation Name"');
 		req.push('noticeNumbers=1,2,3,4');*/
+
+		if(options.requestAttributes) {
+			req.push('[ req_attributes ]');
+			
+			for(var attr in options.requestAttributes) {
+				//console.log(attr);
+				if(options.requestAttributes[attr]) {
+					if(validrequestattribute.indexOf(attr) < 0) {
+						callback('Invalid request attribute ' + attr, false);
+						return false;
+					} else {
+						req.push(attr + '=' + options.requestAttributes[attr]);
+					}
+				}
+			}
+		}
 		
 		req.push('[ req_ext ]');
 		/*if(options.mustStaple) {
