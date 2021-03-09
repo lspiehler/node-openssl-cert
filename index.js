@@ -101,6 +101,46 @@ var openssl = function(options) {
 		});
 	}
 
+	var runSSCEPCommand = function(params, callback) {
+		const stdoutbuff = [];
+		const stderrbuff = [];
+		
+		const sscep = spawn( 'sscep', normalizeCommand(params.cmd), {cwd: params.cwd} );
+
+		if(params.hasOwnProperty('stdin')) {
+			if(params.stdin) {
+				sscep.stdin.write(params.stdin);
+				sscep.stdin.end();
+			}
+		}
+		
+		sscep.stdout.on('data', function(data) {
+			stdoutbuff.push(data);
+		});
+
+		/*sscep.stdout.on('end', function(data) {
+			stderrbuff.push(data.toString());
+		});*/
+		
+		sscep.stderr.on('data', function(data) {
+			stderrbuff.push(data);
+		});
+		
+		sscep.on('exit', function(code) {
+			var out = {
+				command: 'sscep ' + params.cmd,
+				stdout: Buffer.concat(stdoutbuff),
+				stderr: Buffer.concat(stderrbuff),
+				exitcode: code
+			}
+			if (code != 0) {
+				callback(Buffer.concat(stderrbuff).toString(), out);
+			} else {
+				callback(false, out);
+			}
+		});
+	}
+
 	var runOpenSSLCommandv2 = function(params, callback) {
 		const stdoutbuff = [];
 		const stderrbuff = [];
@@ -3507,6 +3547,54 @@ var openssl = function(options) {
 					});
 				}
 			});
+		});
+	}
+
+	this.SCEPRequest = function(params, callback) {
+		tmp.dir({unsafeCleanup: true}, function _tempDirCreated(err, path, cleanupCallback) {
+			if(err) {
+				cleanupCallback();
+				callback(err, false);
+			} else {
+				let cmd = ['getca -c scep.crt -u ' + params.scepurl + ' -v'];
+				runSSCEPCommand({cmd: cmd.join(' '), cwd: path}, function(err, out) {
+					if(err) {
+						cleanupCallback();
+						callback(err, false);
+					} else {
+						fs.writeFile(path + '/scep.csr', params.csr, function(err) {
+							if(err) {
+								cleanupCallback();
+								callback(err, false);
+							} else {
+								fs.writeFile(path + '/scep.key', params.key, function(err) {
+									if(err) {
+										cleanupCallback();
+										callback(err, false);
+									} else {
+										let cmd = ['enroll -u ' + params.scepurl + ' -k ' + path + '/scep.key -r ' + path + '/scep.csr -l cert.crt -c scep.crt-0 -e scep.crt-1 -v'];
+										runSSCEPCommand({cmd: cmd.join(' '), cwd: path}, function(err, out) {
+											if(err) {
+												cleanupCallback();
+												callback(err, false);
+											} else {
+												fs.readFile(path + '/cert.crt', function(err, data) {
+													cleanupCallback();
+													if(err) {
+														callback(err, false);
+													} else {
+														callback(false, data.toString());
+													}
+												});
+											}
+										});
+									}
+								});
+							}
+						});
+					}
+				});
+			}
 		});
 	}
 
