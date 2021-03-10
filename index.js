@@ -144,62 +144,52 @@ var openssl = function(options) {
 	var runOpenSSLCommandv2 = function(params, callback) {
 		const stdoutbuff = [];
 		const stderrbuff = [];
-		var terminate = false;
+		var launched = false;
 		
-		if(params.cmd.indexOf('s_client') >= 0) {
-			terminate = true;
-		}
-		
-		const openssl = spawn( opensslbinpath, normalizeCommand(params.cmd) );
+		try {
+			const openssl = spawn( opensslbinpath, normalizeCommand(params.cmd), {cwd: params.cwd } );
 
-		if(params.hasOwnProperty('stdin')) {
-			if(params.stdin) {
-				openssl.stdin.write(params.stdin);
-				openssl.stdin.end();
-			}
-		}
-		
-		openssl.stdout.on('data', function(data) {
-			stdoutbuff.push(data.toString());
-			/*//openssl.stdin.setEncoding('utf-8');
-			setTimeout(function() {
-				//openssl.stdin.write("QUIT\r");
-				//console.log('QUIT\r\n');
-				//openssl.stdin.end();
-				openssl.kill();
-			}, 1000);*/
-			if(terminate) {
-				//if(data.toString().indexOf('Verify return code: 0 (ok)') >= 0 ) {
-				if(stdoutbuff.join('').toString().indexOf('Verify return code: ') >= 0 ) {
-					openssl.kill();
+			//console.log(openssl.pid);
+
+			if(params.hasOwnProperty('stdin')) {
+				if(params.stdin) {
+					openssl.stdin.write(params.stdin);
+					openssl.stdin.end();
 				}
 			}
-		});
+			
+			openssl.stdout.on('data', function(data) {
+				stdoutbuff.push(data);
+			});
 
-		/*openssl.stdout.on('end', function(data) {
-			stderrbuff.push(data.toString());
-		});*/
-		
-		openssl.stderr.on('data', function(data) {
-			stderrbuff.push(data.toString());
-		});
-		
-		openssl.on('exit', function(code) {
-			if(terminate && code==null) {
-				code = 0;
-			}
-			var out = {
-				command: 'openssl ' + params.cmd,
-				stdout: stdoutbuff.join(''),
-				stderr: stderrbuff.join(''),
-				exitcode: code
-			}
-			if (code != 0) {
-				callback(stderrbuff.join(), out);
-			} else {
-				callback(false, out);
-			}
-		});
+			openssl.on('error', function(err) {
+				console.log(err);
+				callback(err, false);
+				return;
+			});
+			
+			openssl.stderr.on('data', function(data) {
+				stderrbuff.push(data);
+			});
+			
+			openssl.on('exit', function(code) {
+				var out = {
+					command: 'openssl ' + params.cmd,
+					stdout: Buffer.concat(stdoutbuff),
+					stderr: Buffer.concat(stderrbuff),
+					exitcode: code
+				}
+				if (code != 0) {
+					callback(Buffer.concat(stderrbuff).toString(), out);
+				} else {
+					callback(false, out);
+				}
+			});
+		} catch(e) {
+			console.log(e);
+			callback(err, false);
+			return;
+		}
 	}
 	
 	var runOpenSSLCommand = function(cmd, callback) {
@@ -2706,7 +2696,7 @@ var openssl = function(options) {
 									}
 									runOpenSSLCommandv2({ cmd: cmd.join(' '), stdin: password}, function(err, out) {
 										if(err) {
-											callback(err, out.stdout, {
+											callback(err, out.stdout.toString(), {
 												command: [out.command.replace(config, 'config.txt').replace(csrpath, 'cert.csr')],
 												files: {
 													config: req.join('\r\n')
@@ -2714,7 +2704,7 @@ var openssl = function(options) {
 											});
 										} else {
 											fs.readFile(params.persistcapath + '/serial.txt', function(err, serial) {
-												callback(false, out.stdout, {
+												callback(false, out.stdout.toString(), {
 													command: [out.command.replace(config, 'config.txt').replace(csrpath, 'cert.csr')],
 													serial: serial.toString().replace('\r\n', '').replace('\n', ''),
 													files: {
@@ -2783,7 +2773,7 @@ var openssl = function(options) {
 													
 													runOpenSSLCommandv2({ cmd: cmd.join(' ') }, function(err, out) {
 																if(err) {
-																	callback(err, out.stdout, {
+																	callback(err, out.stdout.toString(), {
 																		command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'cert.csr').replace(capath, 'ca.crt').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
 																		files: {
 																			config: req.join('\r\n')
@@ -2796,7 +2786,7 @@ var openssl = function(options) {
 																			//delete temp serial file
 																		});
 																		
-																		callback(false, out.stdout, {
+																		callback(false, out.stdout.toString(), {
 																			command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'cert.csr').replace(capath, 'ca.crt').replace(csrconfig, 'certconfig.txt') + ' -out cert.crt'],
 																			serial: serial.toString().replace('\r\n', '').replace('\n', ''),
 																			files: {
@@ -3232,19 +3222,29 @@ var openssl = function(options) {
 						
 								runOpenSSLCommandv2({ cmd: cmd.join(' '), stdin: password }, function(err, out) {
 									if(err) {
-										callback(err, out.stdout, {
+										callback(err, out.stdout.toString(), {
 											command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'csrconfig.txt') + ' -out cert.csr'],
 											files: {
 												config: req.join('\r\n')
 											}
 										});
 									} else {
-										callback(false, out.stdout, {
-											command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'csrconfig.txt') + ' -out cert.csr'],
-											files: {
-												config: req.join('\r\n')
-											}
-										});
+										//console.log(out.stdout.length);
+										if(out.stdout.length > 0) {
+											callback(false, out.stdout.toString(), {
+												command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'csrconfig.txt') + ' -out cert.csr'],
+												files: {
+													config: req.join('\r\n')
+												}
+											});
+										} else {
+											callback('process failure', out.stdout.toString(), {
+												command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'csrconfig.txt') + ' -out cert.csr'],
+												files: {
+													config: req.join('\r\n')
+												}
+											});
+										}
 									}
 									cleanupCallback1();
 									cleanupCallback2();
@@ -3562,6 +3562,7 @@ var openssl = function(options) {
 						cleanupCallback();
 						callback(err, false);
 					} else {
+						callback(false, out.stdout.toString());
 						fs.writeFile(path + '/scep.csr', params.csr, function(err) {
 							if(err) {
 								cleanupCallback();
@@ -3599,9 +3600,6 @@ var openssl = function(options) {
 	}
 
 	this.generateRSAPrivateKey = function(options, callback) {
-		const type = 'RSA';
-		let pkeyopt = [];
-		var encryption = false;
 		let validoptions = [
 			'rsa_keygen_bits',
 			'rsa_keygen_primes',
@@ -3617,7 +3615,6 @@ var openssl = function(options) {
 		options.rsa_keygen_pubexp = typeof options.rsa_keygen_pubexp !== 'undefined' ? options.rsa_keygen_pubexp : false;
 		options.format = typeof options.format !== 'undefined' ? options.format : 'PKCS8';
 		if(options.encryption) {
-			encryption = true;
 			options.encryption.password = typeof options.encryption.password !== 'undefined' ? options.encryption.password : 'test123';
 			options.encryption.cipher = typeof options.encryption.cipher !== 'undefined' ? options.encryption.cipher : 'des3';
 		} else {
@@ -3627,9 +3624,7 @@ var openssl = function(options) {
 		for (var option in options) {
 			if(validoptions.indexOf(option) >= 0) {
 				if(option=='encryption' && options[option]) {
-					var passfile = tmp.fileSync();
-					fs.writeFileSync(passfile.name, options[option].password);
-					cmd.push('-pass file:' + passfile.name + ' -' + options[option].cipher);
+					cmd.push('-pass stdin -' + options[option].cipher);
 				} else if(options[option] && option.indexOf('rsa_keygen_') == 0) {
 					cmd.push('-pkeyopt ' + option + ':' + options[option]);
 				}
@@ -3640,28 +3635,34 @@ var openssl = function(options) {
 		}
 		
 		if(options.format=='PKCS8') {
-			runOpenSSLCommand(cmd.join(' '), function(err, out) {
-				//console.log(out);
-				if(option=='encryption' && options[option]) {
-					passfile.removeCallback();
+			runOpenSSLCommandv2({ cmd: cmd.join(' '), stdin: options.encryption.password}, function(err, out) {
+				//console.log(err);
+				if(err) {
+					callback(err, false, false);
+				} else {
+					if(out.stdout.length > 0) {
+						callback(false, out.stdout.toString(), [out.command + ' -out priv.key']);
+					} else {
+						callback('process failure', out.stdout.toString(), [out.command + ' -out priv.key']);
+					}
 				}
-				callback(false, out.stdout, [out.command + ' -out priv.key']);
 			});
 		} else if (options.format == 'PKCS1' ) {
-			runOpenSSLCommand(cmd.join(' '), function(err, outkey) {
-				if(option=='encryption' && options[option]) {
-					passfile.removeCallback();
-				}
+			runOpenSSLCommandv2({ cmd: cmd.join(' '), stdin: options.encryption.password}, function(err, outkey) {
 				if(err) {
-					callback(err, false);
+					callback(err, false, false);
 				} else {
-					convertToPKCS1(outkey.stdout, options.encryption, function(err, out) {
-						if(err) {
-							callback(err, false);
-						} else {
-							callback(false, out.data, [ outkey.command + ' -out priv.key', out.command + ' -out priv.key' ]);
-						}
-					});
+					if(outkey.stdout.length > 0) {
+						convertToPKCS1(outkey.stdout.toString(), options.encryption, function(err, out) {
+							if(err) {
+								callback(err, false, false);
+							} else {
+								callback(false, out.data, [ outkey.command + ' -out priv.key', out.command + ' -out priv.key' ]);
+							}
+						});
+					} else {
+						callback('process failure', out.stdout.toString(), [out.command + ' -out priv.key']);
+					}
 				}
 			});
 		} else {
