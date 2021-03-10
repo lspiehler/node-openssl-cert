@@ -25,6 +25,20 @@ yum install openssl
 npm install node-openssl-cert
 ```
 
+### Build SSCEP on Ubuntu 20.04
+
+```
+apt -y install libtool m4 automake make git pkg-config
+
+cd /usr/src
+git clone https://github.com/certnanny/sscep.git
+cd sscep
+libtoolize && aclocal && autoheader && automake --add-missing && autoreconf
+./configure
+make
+make install
+```
+
 ### Usage
 Load and instantiate node-openssl-cert
 ```
