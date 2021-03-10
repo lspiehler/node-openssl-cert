@@ -43,20 +43,44 @@ var randomizeCSR = function() {
 //let scepurl = 'http://pkiaas.io/scep/w7Gxq4zZH9'
 let scepurl = 'http://cyopki.com/scep/f5IK8ghmT0'
 
-for(let i = 0; i <= 4; i++) {
+/*var count = 0;
+
+for(let i = 0; i <= 75; i++) {
+    openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key, cmd) {
+        if(err) {
+            console.log('key');
+            console.log(err);
+        } else {
+            openssl.generateCSRv2({options: randomizeCSR(), key: key}, function(err, csr, cmd) {
+                if(err) {
+                    console.log('csr');
+                    console.log(err);
+                } else {
+                    count++;
+                    //console.log(csr);
+                }
+            });
+        }
+    })
+}
+
+console.log(count);*/
+
+for(let i = 0; i <= 30; i++) {
     openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key, cmd) {
         if(err) {
             console.log(err);
         } else {
-            //console.log(key);
-            openssl.generateCSR(randomizeCSR(), key, false, function(err, csr, cmd) {
+            openssl.generateCSRv2({options: randomizeCSR(), key: key}, function(err, csr, cmd) {
                 if(err) {
                     console.log(err);
+                    console.log(key);
                 } else {
                     //console.log(csr);
                     openssl.SCEPRequest({csr: csr, key: key, scepurl: scepurl}, function(err, out) {
                         if(err) {
                             console.log(err);
+                            console.log(out);
                         } else {
                             console.log(out);
                             //console.log(openssl.getDistinguishedName(attrs.subject));
