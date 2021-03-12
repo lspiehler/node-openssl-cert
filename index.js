@@ -215,8 +215,7 @@ var openssl = function(options) {
 				
 			});
 		} catch(e) {
-			console.log(e);
-			callback(err, false);
+			callback(e, false);
 			return;
 		}
 	}
