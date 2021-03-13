@@ -3612,7 +3612,6 @@ var openssl = function(options) {
 						cleanupCallback();
 						callback(err, false);
 					} else {
-						callback(false, out.stdout.toString());
 						fs.writeFile(path + '/scep.csr', params.csr, function(err) {
 							if(err) {
 								cleanupCallback();
