@@ -3243,7 +3243,13 @@ var openssl = function(options) {
 	}
 
 	this.generateCSRv2 = function(params, callback) {
-		var password = 'fakepassword';
+		let password = 'fakepassword';
+		let key;
+		if(!params.key) {
+			key = '';
+		} else {
+			key = params.key;
+		}
 		generateConfig(params.options, false, false, function(err, req) {
 			if(err) {
 				callback(err,{
@@ -3254,7 +3260,7 @@ var openssl = function(options) {
 			} else {
 				tmp.file(function _tempFileCreated(err, keypath, fd, cleanupCallback1) {
 					if (err) throw err;
-					fs.writeFile(keypath, params.key, function() {
+					fs.writeFile(keypath, key, function() {
 						tmp.file(function _tempFileCreated(err, csrpath, fd, cleanupCallback2) {
 							if (err) throw err;
 							fs.writeFile(csrpath, req.join('\r\n'), function() {
