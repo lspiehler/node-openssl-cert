@@ -333,55 +333,59 @@ var openssl = function(options) {
 	var getSubjectAlternativeNames = function(sans, originalcert, callback) {
 		var names = {}
 		let processedunsupportedtypes = false;
-		var sanarr = sans.content[0].split(', ');
-		for(var i = 0; i <= sanarr.length - 1; i++) {
-			var san = sanarr[i].split(':');
-			var type;
-			if(san[0]=='IP Address') {
-				type = 'IP';
-			} else if(san[0]=='Registered ID') {
-				type = 'RID';
-			} else {
-				type = san[0];
-			}
-			var value = san[1];
-			//console.log(type + ' - ' + value);
-			if(value!='<unsupported>') {
-				if(names[type]) {
-					names[type].push(value);
+		if(sans.content[0]) {
+			var sanarr = sans.content[0].split(', ');
+			for(var i = 0; i <= sanarr.length - 1; i++) {
+				var san = sanarr[i].split(':');
+				var type;
+				if(san[0]=='IP Address') {
+					type = 'IP';
+				} else if(san[0]=='Registered ID') {
+					type = 'RID';
 				} else {
-					names[type] = [value];
+					type = san[0];
 				}
-			} else {
-				if(!processedunsupportedtypes) {
-					processedunsupportedtypes = true;
-				}
-			}
-		}
-		
-		if(processedunsupportedtypes) {
-			getUnsupportedSANs(originalcert, function(err, otherNames) {
-				if(err) {
-					return false;
-				} else {
-					names['otherName'] = otherNames;
-					/*if(Object.keys(names).length > 0) {
-						return names;
+				var value = san[1];
+				//console.log(type + ' - ' + value);
+				if(value!='<unsupported>') {
+					if(names[type]) {
+						names[type].push(value);
 					} else {
-						return false;
-					}*/
-					//console.log(names);
-					callback(null, names);
+						names[type] = [value];
+					}
+				} else {
+					if(!processedunsupportedtypes) {
+						processedunsupportedtypes = true;
+					}
 				}
-			});
-		} else {
-			/*if(Object.keys(names).length > 0) {
-				return names;
+			}
+			
+			if(processedunsupportedtypes) {
+				getUnsupportedSANs(originalcert, function(err, otherNames) {
+					if(err) {
+						return false;
+					} else {
+						names['otherName'] = otherNames;
+						/*if(Object.keys(names).length > 0) {
+							return names;
+						} else {
+							return false;
+						}*/
+						//console.log(names);
+						callback(null, names);
+					}
+				});
 			} else {
-				return false;
-			}*/
-			//console.log(names);
-			callback(null, names);
+				/*if(Object.keys(names).length > 0) {
+					return names;
+				} else {
+					return false;
+				}*/
+				//console.log(names);
+				callback(null, names);
+			}
+		} else {
+			callback(null, {});
 		}
 	}
 	
