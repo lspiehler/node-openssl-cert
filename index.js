@@ -345,7 +345,8 @@ var openssl = function(options) {
 				} else {
 					type = san[0];
 				}
-				var value = san[1];
+				san.shift();
+				var value = san.join(':');
 				//console.log(type + ' - ' + value);
 				if(value!='<unsupported>') {
 					if(names[type]) {
