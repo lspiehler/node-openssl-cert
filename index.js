@@ -10,6 +10,7 @@ const tempdir = '/tmp/';
 var moment = require('moment');
 var net = require('net');
 var crypto = require('crypto');
+const name_mappings = require('./name_mappings');
 
 var openssl = function(options) {
 	
@@ -391,10 +392,7 @@ var openssl = function(options) {
 	}
 	
 	var getUnsupportedSANs = function(cert, callback) {
-		let oids = {
-			"Microsoft Universal Principal Name": "msUPN",
-			"Microsoft Smartcardlogin": "msSmartcardLogin"
-		}
+		let oids = name_mappings;
 		let otherNameSANs = [];
 		tmp.file(function _tempFileCreated(err, path, fd, cleanupCallback1) {
 			if (err) throw err;
@@ -425,10 +423,11 @@ var openssl = function(options) {
 												if(lines[j + 1].indexOf('OBJECT') >= 1) {
 													if(lines[j + 3].indexOf('UTF8STRING') >= 1) {
 														let oid = lines[j + 1].split(':')[3].replace('\r','');
-														if(oid.split('.').length >= 4) {
-															otherNameSANs.push(oid + ';UTF8:' + lines[j + 3].split(':')[3].replace('\r',''));
-														} else {
+														//console.log(oid);
+														if(oids.hasOwnProperty(oid)) {
 															otherNameSANs.push(oids[oid] + ';UTF8:' + lines[j + 3].split(':')[3].replace('\r',''));
+														} else {
+															otherNameSANs.push(oid + ';UTF8:' + lines[j + 3].split(':')[3].replace('\r',''));
 														}
 														//console.log(otherNameSANs);
 														//console.log(lines[j + 3].split(':')[3].replace('\r',''));
@@ -1522,6 +1521,17 @@ var openssl = function(options) {
 					});
 				});
 			});
+		});
+	}
+
+	this.convertCSRPEMtoDER = function(csr, callback) {
+		var cmd = ['req -outform DER'];
+		runOpenSSLCommandv2({ cmd: cmd.join(' '), stdin: csr}, function(err, out) {
+			if(err) {
+				callback(true, false, out.command);
+			} else {
+				callback(false, out.stdout, out.command);
+			}
 		});
 	}
 
