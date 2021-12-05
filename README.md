@@ -394,5 +394,5 @@ nI6qB6XsphQP
 
 ### Update name mappings
 ```
-node compile_names_mappings.js > name_mappings.js
+node compile_name_mappings.js > name_mappings.js
 ```

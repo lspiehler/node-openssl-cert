@@ -39,24 +39,33 @@ var oids = {
 
 httpRequest({options: options}, function(err, resp) {
     if(err) {
-        console.log(err);
+        console.error(err);
     } else {
         let lines = resp.body.split('\n');
         for(let i = 0; i <= lines.length - 1; i++) {
-            if(lines[i].charAt(0)!='#') {
+            if(lines[i] != '' && lines[i].charAt(0)!='#' && lines[i].charAt(0)!='!') {
                 //console.log(lines[i].charAt(0);
                 let line = lines[i].split(':');
+                let key;
+                let value;
+                //console.log(lines[i]);
+                //console.log(line);
                 if(line.length == 3) {
-                    let key = line[2].trim();
-                    let value = line[1].trim();
-                    if(value != '') {
-                        oids[key] = value;
-                    } else {
-                        oids[key] = key;
-                    }
+                    key = line[2].trim();
+                    value = line[1].trim();
+                } else {
+                    key = line[1].trim();
+                    value = line[1].trim();
+                }
+                if(value != '') {
+                    oids[key] = value;
+                } else {
+                    oids[key] = key;
                 }
             }
         }
         console.log('module.exports = ' + JSON.stringify(oids, null, 2));
+        let keys = Object.keys(oids);
+        console.error('Returned ' + keys.length + ' name mappings');
     }
 });
