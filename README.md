@@ -391,3 +391,8 @@ DrJfTYMaUqzC77FnAecLvglXKPMEv9oKuABbab/RsCsSTV2/ikgXheGdcF7KIA3t
 nI6qB6XsphQP
 -----END CERTIFICATE REQUEST-----
 ```
+
+### Update name mappings
+```
+node compile_names_mappings.js > name_mappings.js
+```
