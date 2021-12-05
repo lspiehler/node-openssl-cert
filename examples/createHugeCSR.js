@@ -60,13 +60,21 @@ var csroptions = {
 }
 
 let keys = Object.keys(name_mappings);
-//csroptions.extensions.SANs.otherName = ['nsSGC;UTF8:example othername'];
 csroptions.extensions.SANs.otherName = [];
+csroptions.extensions.SANs.otherName.push('nsSGC;UTF8:example othername');
+csroptions.extensions.SANs.otherName.push('msEFS;UTF8:example othername');
+csroptions.extensions.SANs.otherName.push('nsSGC;UTF8:example othername');
+csroptions.extensions.SANs.otherName.push('msCTLSign;UTF8:example othername');
+csroptions.extensions.SANs.otherName.push('msCodeInd;UTF8:example othername');
+csroptions.extensions.SANs.otherName.push('msCodeCom;UTF8:example othername');
+csroptions.extensions.SANs.otherName.push('secureShellServer;UTF8:example othername');
+//csroptions.extensions.SANs.otherName = [];
+//for (let i = 0; i < keys.length; i++) {
 for (let i = 0; i < keys.length; i++) {
-    csroptions.extensions.SANs.otherName.push(name_mappings[keys[i]] + ';UTF8:huge csr test');
+    //csroptions.extensions.SANs.otherName.push(name_mappings[keys[i]] + ';UTF8:huge csr test');
 }
 
-//console.log(csroptions);
+console.log(csroptions.extensions.SANs.otherName);
 
 //var path = 'C:/Users/Lyas/Desktop/nodetest/cadir';
 openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key, cmd) {
@@ -77,6 +85,13 @@ openssl.generateRSAPrivateKey(rsakeyoptions, function(err, key, cmd) {
         } else {
             //console.log(cmd);
             console.log(csr);
+            openssl.getCSRInfo(csr, function(err, attrs, cmd) {
+				if(err) {
+					console.log(err);
+				} else {
+					console.log(attrs);
+				}
+			});
         }
     });
 });

@@ -6,15 +6,15 @@ var options = {
 	binpath: 'C:/Program Files/OpenSSL-Win64/bin/openssl.exe'
 }
 
-var openssl = new node_openssl(options);
+var openssl = new node_openssl({});
 
-fs.readFile('./godaddy.cer', function(err, contents) {
-	openssl.getCertInfo(contents, function(err, attrs, cmd) {
+fs.readFile('./cert.csr', function(err, contents) {
+	//console.log(contents)
+	openssl.getCSRInfo(contents.toString(), function(err, attrs, cmd) {
 		if(err) {
 			console.log(err);
 		} else {
-			console.log(attrs);
-			console.log(openssl.getDistinguishedName(attrs.subject));
+			console.log(JSON.stringify(attrs, null, 2));
 		}
 	});
 });
