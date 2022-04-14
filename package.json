@@ -1,15 +1,15 @@
 {
   "name": "node-openssl-cert",
-  "version": "0.1.40",
+  "version": "0.1.41",
   "description": "Node.JS OpenSSL wrapper",
   "main": "index.js",
   "directories": {
     "test": "test"
   },
   "dependencies": {
-    "crypto-random-string": "^3.3.1",
-    "moment": "^2.22.1",
-    "tmp": "^0.0.33"
+    "crypto-random-string": "^4.0.0",
+    "moment": "^2.29.2",
+    "tmp": "^0.2.1"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
