@@ -472,7 +472,7 @@ var openssl = function(options) {
 	
 	var getExtendedKeyUsage = function(eku, callback) {
 		var extendedkeyusage = {}
-		var index = {
+		/*var index = {
 			'TLS Web Server Authentication': 'serverAuth',
 			'TLS Web Client Authentication': 'clientAuth',
 			'Code Signing': 'codeSigning',
@@ -488,12 +488,17 @@ var openssl = function(options) {
 			'IPSec Tunnel': 'ipsecTunnel',
 			'IPSec User': 'ipsecUser',
 			'1.3.6.1.4.1.311.20.2.1': '1.3.6.1.4.1.311.20.2.1'
-		}
+		}*/
+		let oids = name_mappings;
 		var extendedkeyusages = eku.content[0].split(', ');
 		if(eku.critical) extendedkeyusage.critical = true;
 		extendedkeyusage['usages'] = [];
 		for(var i = 0; i <= extendedkeyusages.length - 1; i++) {
-			extendedkeyusage['usages'].push(index[extendedkeyusages[i]]);
+			if(oids.hasOwnProperty(extendedkeyusages[i])) {
+				extendedkeyusage['usages'].push(oids[extendedkeyusages[i]]);
+			} else {
+				extendedkeyusage['usages'].push(extendedkeyusages[i]);
+			}
 		}
 		callback(null, extendedkeyusage);
 	}
@@ -2212,7 +2217,7 @@ var openssl = function(options) {
 							var critical = '';
 							var valid = 0;
 							for(var i = 0; i <= options.extensions[ext].usages.length - 1; i++) {
-								if(validextkeyusage.indexOf(options.extensions[ext].usages[i]) < 0) {
+								if(validextkeyusage.indexOf(options.extensions[ext].usages[i]) < 0 && /^([0-2])((\.0)|(\.[1-9][0-9]*))*$/.test(options.extensions[ext].usages[i]) === false) {
 									callback('Invalid ' + ext + ': ' + options.extensions[ext].usages[i], false);
 									return false;
 								} else {
