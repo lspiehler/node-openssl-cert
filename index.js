@@ -1798,7 +1798,7 @@ var openssl = function(options) {
 				tmp.file(function _tempFileCreated(err, ca, fd, cleanupCallback2) {
 					if (err) throw err;
 					fs.writeFile(ca, cacert, function() {
-						var cmd = ['ocsp -'+ hash +' -issuer '+ ca +' -cert ' + path + ' -header host=' + uri.split('/')[2] + ' -url ' + uri + ' -text -CAfile ' + ca];
+						var cmd = ['ocsp -'+ hash +' -issuer '+ ca +' -cert ' + path + ' -header host=' + uri.split('/')[2] + ' -url ' + uri + ' -text -no_cert_verify -CAfile ' + ca];
 						if(!nonce) {
 							cmd.push('-no_nonce');
 						}
