@@ -3205,6 +3205,7 @@ var openssl = function(options) {
 	}
 	
 	this.generateCSR = function(options, key, password, callback) {
+		let tmpfilepath = '';
 		generateConfig(options, false, false, function(err, req) {
 			if(err) {
 				callback(err,{
@@ -3226,8 +3227,9 @@ var openssl = function(options) {
 								}
 								if(password) {
 									var passfile = tmp.fileSync();
-									fs.writeFileSync(passfile.name, password);
-									cmd.push('-passin file:' + passfile.name);
+									tmpfilepath = passfile.name;
+									fs.writeFileSync(tmpfilepath, password);
+									cmd.push('-passin file:' + tmpfilepath);
 								}
 						
 						//console.log(cmd);
@@ -3235,14 +3237,14 @@ var openssl = function(options) {
 								runOpenSSLCommand(cmd.join(' '), function(err, out) {
 									if(err) {
 										callback(err, out.stdout, {
-											command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'csrconfig.txt') + ' -out cert.csr'],
+											command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'csrconfig.txt').replace('-passin file:' + tmpfilepath, '-passin pass:hidden') + ' -out cert.csr'],
 											files: {
 												config: req.join('\r\n')
 											}
 										});
 									} else {
 										callback(false, out.stdout, {
-											command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'csrconfig.txt') + ' -out cert.csr'],
+											command: [out.command.replace(keypath, 'priv.key').replace(csrpath, 'csrconfig.txt').replace('-passin file:' + tmpfilepath, '-passin pass:hidden') + ' -out cert.csr'],
 											files: {
 												config: req.join('\r\n')
 											}
